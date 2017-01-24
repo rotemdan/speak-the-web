@@ -143,9 +143,10 @@ const speakTargetElement = () => __awaiter(this, void 0, void 0, function* () {
         return;
     const textNodes = getInnerTextNodes(currentTargetElement);
     let text = "";
-    textNodes.forEach((element) => {
-        text += element.textContent;
+    textNodes.forEach((node) => {
+        text += node.textContent;
     });
+    log(textNodes);
     log("Target element:", currentTargetElement);
     log("Text:", text);
     speechSynthesis.cancel();
@@ -175,6 +176,20 @@ const speakTargetElement = () => __awaiter(this, void 0, void 0, function* () {
         utterance.onboundary = (event) => {
             if (event.name === "word") {
                 log(event.charIndex);
+                //log(event);
+                let nodeTextOffset = 0;
+                for (let node of textNodes) {
+                    const eventOffset = event.charIndex;
+                    const nodeText = node.textContent;
+                    if (nodeTextOffset + nodeText.length > event.charIndex) {
+                        //log(node);
+                        const wordStartOffset = eventOffset;
+                        const wordEndOffset = wordStartOffset + text.substring(wordStartOffset).indexOf(" ");
+                        log(text.substring(eventOffset, wordEndOffset));
+                        break;
+                    }
+                    nodeTextOffset += nodeText.length;
+                }
             }
         };
         speechSynthesis.speak(utterance);

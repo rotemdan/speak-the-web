@@ -85,10 +85,12 @@ const speakTargetElement = async () => {
 
 	const textNodes = getInnerTextNodes(currentTargetElement);
 	let text = "";
-	
-	textNodes.forEach((element) => {
-		text += element.textContent;
+
+	textNodes.forEach((node) => {
+		text += node.textContent;
 	});
+
+	log(textNodes);
 
 	log("Target element:", currentTargetElement);
 	log("Text:", text);
@@ -124,8 +126,25 @@ const speakTargetElement = async () => {
 		utterance.onboundary = (event) => {
 			if (event.name === "word") {
 				log(event.charIndex);
+				//log(event);
 
-				
+				let nodeTextOffset = 0;
+
+				for (let node of textNodes) {
+					const eventOffset = event.charIndex;
+					const nodeText = node.textContent!;
+
+					if (nodeTextOffset + nodeText.length > event.charIndex) {
+						//log(node);
+						const wordStartOffset = eventOffset;
+						const wordEndOffset = wordStartOffset + text.substring(wordStartOffset).indexOf(" ");
+
+						log(text.substring(eventOffset, wordEndOffset))
+						break;
+					}
+
+					nodeTextOffset += nodeText.length;
+				}
 			}
 		}
 
@@ -210,7 +229,7 @@ setInterval(async () => {
 		return;
 	}
 	//log($(targetElement).offset())
-	
+
 	/*
 	if (timeSpeechHasLastEnded > Date.now() - 1000) {
 		if (timeWindowWasLastScrolled > Date.now() - 1000 ||
@@ -239,11 +258,11 @@ setInterval(async () => {
 	$(targetElement).on("mouseleave", onTargetElementMouseLeave);
 
 	//if (playIcon.css("display") === "none") {
-		playIcon.css("opacity", "0.3");
-		const targetElementOffset = $(targetElement).offset();
-		playIcon.offset({ top: targetElementOffset.top - playIconHeight / 2, left: boundingRectOfInnerTextNodes.right + playIconWidth / 2 });
-		
-		//log($(playIcon).offset());
+	playIcon.css("opacity", "0.3");
+	const targetElementOffset = $(targetElement).offset();
+	playIcon.offset({ top: targetElementOffset.top - playIconHeight / 2, left: boundingRectOfInnerTextNodes.right + playIconWidth / 2 });
+
+	//log($(playIcon).offset());
 	//}
 
 	currentTargetElement = targetElement;
