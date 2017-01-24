@@ -9,60 +9,63 @@
 // @grant       GM_setValue
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // ==/UserScript== 
-const log = console.log;
-const isElementCompletelyVisible = (element) => {
-    const elementClientRect = element.getBoundingClientRect();
-    return (elementClientRect.top >= 0 &&
-        elementClientRect.left >= 0 &&
-        elementClientRect.bottom <= window.innerHeight &&
-        elementClientRect.right <= window.innerWidth);
-};
-const findDeepestDescendantWithIdenticalTextContent = (element) => {
-    const targetTextContent = $(element).text();
-    const matchingChildren = $(element).children().filter((index, child) => $(child).text() === targetTextContent);
-    if (matchingChildren.length > 0) {
-        return findDeepestDescendantWithIdenticalTextContent(matchingChildren.get(0));
-    }
-    else {
-        return element;
-    }
-};
-const getInnerTextNodes = (element) => {
-    let result = [];
-    const allChildNodes = $(element).contents();
-    for (let i = 0; i < allChildNodes.length; i++) {
-        const node = allChildNodes.get(i);
-        if (node.nodeType === Node.TEXT_NODE) {
-            result.push(node);
+var SpeakTheWeb;
+(function (SpeakTheWeb) {
+    SpeakTheWeb.log = console.log;
+    SpeakTheWeb.isElementCompletelyVisible = (element) => {
+        const elementClientRect = element.getBoundingClientRect();
+        return (elementClientRect.top >= 0 &&
+            elementClientRect.left >= 0 &&
+            elementClientRect.bottom <= window.innerHeight &&
+            elementClientRect.right <= window.innerWidth);
+    };
+    SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent = (element) => {
+        const targetTextContent = $(element).text();
+        const matchingChildren = $(element).children().filter((index, child) => $(child).text() === targetTextContent);
+        if (matchingChildren.length > 0) {
+            return SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent(matchingChildren.get(0));
         }
         else {
-            result = result.concat(getInnerTextNodes(node));
+            return element;
         }
-    }
-    return result;
-};
-const getBoundingRectangleOfInnerTextNodes = (element) => {
-    const allTextNodes = getInnerTextNodes(element);
-    const clientRects = [];
-    const clientRectUnion = {
-        top: Infinity,
-        left: Infinity,
-        bottom: 0,
-        right: 0
     };
-    allTextNodes.forEach((node) => {
-        const range = document.createRange();
-        range.selectNode(node);
-        const nodeRect = range.getBoundingClientRect();
-        clientRects.push(nodeRect);
-        clientRectUnion.top = Math.min(clientRectUnion.top, nodeRect.top);
-        clientRectUnion.left = Math.min(clientRectUnion.left, nodeRect.left);
-        clientRectUnion.bottom = Math.max(clientRectUnion.bottom, nodeRect.bottom);
-        clientRectUnion.right = Math.max(clientRectUnion.right, nodeRect.right);
-    });
-    //log("Client rects:", clientRects);
-    return clientRectUnion;
-};
+    SpeakTheWeb.getInnerTextNodes = (element) => {
+        let result = [];
+        const allChildNodes = $(element).contents();
+        for (let i = 0; i < allChildNodes.length; i++) {
+            const node = allChildNodes.get(i);
+            if (node.nodeType === Node.TEXT_NODE) {
+                result.push(node);
+            }
+            else {
+                result = result.concat(SpeakTheWeb.getInnerTextNodes(node));
+            }
+        }
+        return result;
+    };
+    SpeakTheWeb.getBoundingRectangleOfInnerTextNodes = (element) => {
+        const allTextNodes = SpeakTheWeb.getInnerTextNodes(element);
+        const clientRects = [];
+        const clientRectUnion = {
+            top: Infinity,
+            left: Infinity,
+            bottom: 0,
+            right: 0
+        };
+        allTextNodes.forEach((node) => {
+            const range = document.createRange();
+            range.selectNode(node);
+            const nodeRect = range.getBoundingClientRect();
+            clientRects.push(nodeRect);
+            clientRectUnion.top = Math.min(clientRectUnion.top, nodeRect.top);
+            clientRectUnion.left = Math.min(clientRectUnion.left, nodeRect.left);
+            clientRectUnion.bottom = Math.max(clientRectUnion.bottom, nodeRect.bottom);
+            clientRectUnion.right = Math.max(clientRectUnion.right, nodeRect.right);
+        });
+        //log("Client rects:", clientRects);
+        return clientRectUnion;
+    };
+})(SpeakTheWeb || (SpeakTheWeb = {}));
 var SpeakTheWeb;
 (function (SpeakTheWeb) {
     SpeakTheWeb.guessWordEndOffset = function (sourceText, wordStartOffset) {
@@ -84,7 +87,7 @@ var SpeakTheWeb;
         // If the last letter was an apostrophe (') character, and the character before the word start
         // wasn't an apostrophe and the previous to last character wasn't an "s", 
         // consider that apostrophe not to be a part of the word.
-        if (matchedWord.endsWith("'") &&
+        if (/[\'\’]$]/.test(matchedWord) &&
             sourceText[wordStartOffset - 1] !== "'" &&
             matchedWord[matchedWord.length - 2] !== "s") {
             wordEndIndex -= 1;
@@ -173,15 +176,15 @@ var SpeakTheWeb;
     const speakTargetElement = () => __awaiter(this, void 0, void 0, function* () {
         if (!currentTargetElement)
             return;
-        const textNodes = getInnerTextNodes(currentTargetElement);
+        const textNodes = SpeakTheWeb.getInnerTextNodes(currentTargetElement);
         let text = "";
         textNodes.forEach((node) => {
             text += node.textContent;
         });
-        log(textNodes);
+        SpeakTheWeb.log(textNodes);
         text = text.replace(/[\r\n]/g, " ");
-        log("Target element:", currentTargetElement);
-        log("Text:", text);
+        SpeakTheWeb.log("Target element:", currentTargetElement);
+        SpeakTheWeb.log("Text:", text);
         speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         if (/Chrome/.test(navigator.userAgent)) {
@@ -203,19 +206,19 @@ var SpeakTheWeb;
                 resolve();
             };
             utterance.onerror = (event) => {
-                log("Utterance error:", event.error);
+                SpeakTheWeb.log("Utterance error:", event.error);
                 reject(event.error);
             };
             utterance.onboundary = (event) => {
                 if (event.name === "word") {
-                    log(event.charIndex);
+                    SpeakTheWeb.log(event.charIndex);
                     let nodeTextOffset = 0;
                     for (let node of textNodes) {
                         const eventOffset = event.charIndex;
                         const nodeText = node.textContent;
                         if (nodeTextOffset + nodeText.length > event.charIndex) {
                             //log(node);
-                            log(text.substring(eventOffset, SpeakTheWeb.guessWordEndOffset(text, eventOffset)));
+                            SpeakTheWeb.log(text.substring(eventOffset, SpeakTheWeb.guessWordEndOffset(text, eventOffset)));
                             break;
                         }
                         nodeTextOffset += nodeText.length;
@@ -252,7 +255,7 @@ var SpeakTheWeb;
         const boundingElement = $(hoveredElement)
             .closest("pre,code,li,td,dd,dt,p,div,h1,h2,h3,h4,h5,a,section,article,aside,footer,header,button,caption")
             .get(0);
-        const targetElement = findDeepestDescendantWithIdenticalTextContent(boundingElement);
+        const targetElement = SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent(boundingElement);
         /*
         if (targetElement == currentTargetElement) {
             if (currentTargetElementState === "speaking" ||
@@ -277,7 +280,7 @@ var SpeakTheWeb;
         // Make sure this is not a container of some sort
         if ($("li,ol,ul,table,th,td,dl,dd,dt,div,li,h1,h2,h3,h4,h5,main,section,article,aside,footer,nav", targetElement).length > 0)
             return;
-        const boundingRectOfInnerTextNodes = getBoundingRectangleOfInnerTextNodes(targetElement);
+        const boundingRectOfInnerTextNodes = SpeakTheWeb.getBoundingRectangleOfInnerTextNodes(targetElement);
         /*
             log("Contents:", $(targetElement).contents())
             log("All text nodes:", getInnerTextNodes(targetElement));

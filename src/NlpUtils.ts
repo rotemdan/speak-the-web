@@ -25,7 +25,7 @@ namespace SpeakTheWeb {
 		// If the last letter was an apostrophe (') character, and the character before the word start
 		// wasn't an apostrophe and the previous to last character wasn't an "s", 
 		// consider that apostrophe not to be a part of the word.
-		if (matchedWord.endsWith("'") && 
+		if (/[\'\’]$]/.test(matchedWord) && 
 			sourceText[wordStartOffset - 1] !== "'" && 
 			matchedWord[matchedWord.length - 2] !== "s") {
 			wordEndIndex -= 1;
