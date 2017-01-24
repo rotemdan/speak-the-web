@@ -1,0 +1,43 @@
+{
+	"compileOnSave": true,
+	"compilerOptions": {
+		"outFile": "build/speak-the-web.user.js",
+		"target": "es6",
+		"module": "none",
+		"lib": ["es6", "dom"],
+		"watch": false,
+		"sourceMap": false,
+		"removeComments": false,
+		"noEmitHelpers": false,
+		"noEmitOnError": true,
+		"noImplicitAny": true,
+		"suppressImplicitAnyIndexErrors": true,
+		"noImplicitThis": true,
+		"noImplicitReturns": true,
+		//"allowJs": true,
+		"strictNullChecks": true,
+		"noLib": false,
+		"noEmit": false,
+		"noFallthroughCasesInSwitch": false,
+		"newLine": "LF",
+		"emitBOM": false,
+		"noUnusedLocals": true,
+		"noUnusedParameters": false,
+		"skipLibCheck": false,
+		//"alwaysStrict": true,
+		//"jsx": "react",
+		"pretty": false
+	},
+	"files": [
+		"src/jquery.d.ts",
+		"src/SpeechSynthesis.d.ts",
+		"src/UserscriptMetadata.ts",
+		"src/DomUtils.ts",
+		"src/SpeechSynthesisUtils.ts",
+		"src/speak-the-web.user.ts"
+	],
+
+	"exclude": [
+		"node_modules"
+	]
+}
