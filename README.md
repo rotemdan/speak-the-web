@@ -11,7 +11,7 @@ The extension isn't ready for end-users yet, but you can test the latest develop
 
 ## How to use
 
-Whenever the cursor hovers an area of text that can be spoken, a small `▶` icon should appear right above the top right corner of that area. To stop the speech press the escape key.
+Whenever the cursor hovers an area of text that can be spoken, a small `▶` icon should appear next to the top right corner of that area. To stop the speech press the escape key.
 
 ## Future
 

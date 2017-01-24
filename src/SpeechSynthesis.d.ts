@@ -33,9 +33,9 @@ declare class SpeechSynthesisUtterance {
 }
 
 declare class SpeechSynthesis {
-	paused: boolean;
-	pending: boolean;
-	speaking: boolean;
+	readonly pending: boolean;
+	readonly speaking: boolean;
+	readonly paused: boolean;
 
 	cancel(): void;
 	getVoices(): SpeechSynthesisVoice[];

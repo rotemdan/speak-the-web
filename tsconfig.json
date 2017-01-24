@@ -33,6 +33,7 @@
 		"src/SpeechSynthesis.d.ts",
 		"src/UserscriptMetadata.ts",
 		"src/DomUtils.ts",
+		"src/NlpUtils.ts",
 		"src/speak-the-web.user.ts"
 	],
 
