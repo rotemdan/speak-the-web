@@ -13,12 +13,11 @@ $("head").append(`
 			position: absolute; 
 			display: inline; 
 			visiblity: hidden; 
-			opacity: 0.3; 
-			transition: 
-			opacity 0.3s; 
+			opacity: 0; 
+			transition: opacity 0.3s; 
 			cursor: pointer; 
 			z-index:99999; 
-			background-color: white; 
+			//background-color: white; 
 			color: black;
 			font-family: Arial,Helvetica Neue,Helvetica,sans-serif; 
 		}
@@ -197,21 +196,18 @@ setInterval(async () => {
 	if (targetElement !== boundingElement)
 		log("Using deeper desendant with same text content:", hoveredElement, boundingElement, targetElement);
 
-	/*
 	const onTargetElementMouseLeave = () => {
-		speechSynthesis.cancel()
-
 		$(targetElement).off("mouseleave", onTargetElementMouseLeave);
-
-		playIcon.off("mousedown", onPlayIconMouseDown);
-		playIcon.css("display", "none");
+		setTimeout(() => {
+			if (currentTargetElement === targetElement)
+				playIcon.css("opacity", "0");
+		}, 2000);
 	}
-	*/
 
-	//$(targetElement).on("mouseleave", onTargetElementMouseLeave);
+	$(targetElement).on("mouseleave", onTargetElementMouseLeave);
 
 	//if (playIcon.css("display") === "none") {
-		playIcon.css("visibility", "visible");
+		playIcon.css("opacity", "0.3");
 		const targetElementOffset = $(targetElement).offset();
 		playIcon.offset({ top: targetElementOffset.top - playIconHeight / 2, left: boundingRectOfInnerTextNodes.right });
 		
