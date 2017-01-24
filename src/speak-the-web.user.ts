@@ -9,7 +9,19 @@ const playIconHeight = playIcon.height();
 $("head").append(`
 <style>
 		.currentlySpokenElement { box-shadow: 0 0 0 2px #424242 !important; }
-		#speakTheWebPlayIcon { position: absolute; display: inline; visiblity: hidden; opacity: 0.3; transition: opacity 0.3s; cursor: pointer; z-index:99999; }
+		#speakTheWebPlayIcon { 
+			position: absolute; 
+			display: inline; 
+			visiblity: hidden; 
+			opacity: 0.3; 
+			transition: 
+			opacity 0.3s; 
+			cursor: pointer; 
+			z-index:99999; 
+			background-color: white; 
+			color: black;
+			font-family: Arial,Helvetica Neue,Helvetica,sans-serif; 
+		}
 </style>`);
 
 let timeSpeechHasLastEnded = 0;
