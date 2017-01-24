@@ -1,28 +1,6 @@
 declare function GM_getValue(key: string): string;
 declare function GM_setValue(key: string, value: string): void;
 
-$("body").append("<span id='speakTheWebPlayIcon'>&#x25B6;</span>");
-const playIcon = $("#speakTheWebPlayIcon");
-const playIconWidth = playIcon.width();
-const playIconHeight = playIcon.height();
-
-$("head").append(`
-<style>
-		.currentlySpokenElement { box-shadow: 0 0 0 2px #424242 !important; }
-		#speakTheWebPlayIcon { 
-			position: absolute; 
-			display: inline; 
-			visiblity: hidden; 
-			opacity: 0; 
-			transition: opacity 0.3s; 
-			cursor: pointer; 
-			z-index:99999; 
-			//background-color: white; 
-			color: black;
-			font-family: Arial,Helvetica Neue,Helvetica,sans-serif; 
-		}
-</style>`);
-
 let timeSpeechHasLastEnded = 0;
 let timeWindowWasLastScrolled = 0;
 let timeCursorHasLastMoved = Infinity;
@@ -30,8 +8,6 @@ let timeKeyWasLassedPressed = 0;
 
 let cursorX = 0;
 let cursorY = 0;
-
-let currentTargetElement: HTMLElement | undefined;
 
 $(window).on("scroll", () => {
 	timeWindowWasLastScrolled = Date.now();
@@ -79,25 +55,82 @@ $(document).on("keypress", (e) => {
 	}
 });
 
+$("body").append("<span id='speakTheWebPlayIcon'>&#x25B6;</span>");
+const playIcon = $("#speakTheWebPlayIcon");
+const playIconWidth = playIcon.width();
+const playIconHeight = playIcon.height();
+
+$("head").append(`
+<style>
+		.currentlySpokenElement { box-shadow: 0 0 0 2px #424242 !important; }
+		#speakTheWebPlayIcon { 
+			position: absolute; 
+			display: inline; 
+			visiblity: hidden; 
+			opacity: 0; 
+			transition: opacity 0.3s; 
+			cursor: pointer; 
+			z-index:99999; 
+			//background-color: white; 
+			color: black;
+			font-family: Arial,Helvetica Neue,Helvetica,sans-serif; 
+		}
+</style>`);
+
+let currentTargetElement: HTMLElement | undefined;
+
 const speakTargetElement = async () => {
 	if (!currentTargetElement)
 		return;
 
-	const text = $(currentTargetElement).text().replace(/\r?\n/g, " ");
-
-	if (text.length === 0)
-		return;
+	const textNodes = getInnerTextNodes(currentTargetElement);
+	let text = "";
+	
+	textNodes.forEach((element) => {
+		text += element.textContent;
+	});
 
 	log("Target element:", currentTargetElement);
 	log("Text:", text);
 
-	//$("*").removeClass("currentlySpokenElement");
-	//$(currentTargetElement).addClass("currentlySpokenElement");
 	speechSynthesis.cancel();
-	await speakText(text);
-	//$(currentTargetElement).removeClass("currentlySpokenElement");
 
-	timeSpeechHasLastEnded = Date.now();
+	const utterance = new SpeechSynthesisUtterance(text);
+
+	if (/Chrome/.test(navigator.userAgent)) {
+		for (let voice of speechSynthesis.getVoices()) {
+			if (voice.localService === true) {
+				utterance.voice = voice;
+			}
+		}
+	} else {
+		for (let voice of speechSynthesis.getVoices()) {
+			if (voice.name.indexOf("Microsoft Zira Desktop") === 0) {
+				utterance.voice = voice;
+			}
+		}
+	}
+
+	return new Promise<void>((resolve, reject) => {
+		utterance.onend = (event) => {
+			resolve();
+		}
+
+		utterance.onerror = (event) => {
+			log("Utterance error:", event.error);
+			reject(event.error);
+		}
+
+		utterance.onboundary = (event) => {
+			if (event.name === "word") {
+				log(event.charIndex);
+
+				
+			}
+		}
+
+		speechSynthesis.speak(utterance);
+	});
 }
 
 playIcon.on("mousedown", () => {
@@ -112,7 +145,6 @@ playIcon.on("mouseenter", () => {
 playIcon.on("mouseleave", () => {
 	playIcon.css("opacity", "0.3");
 });
-
 
 setInterval(async () => {
 	if (GM_getValue("scriptEnabled") === "false") {
@@ -209,7 +241,7 @@ setInterval(async () => {
 	//if (playIcon.css("display") === "none") {
 		playIcon.css("opacity", "0.3");
 		const targetElementOffset = $(targetElement).offset();
-		playIcon.offset({ top: targetElementOffset.top - playIconHeight / 2, left: boundingRectOfInnerTextNodes.right });
+		playIcon.offset({ top: targetElementOffset.top - playIconHeight / 2, left: boundingRectOfInnerTextNodes.right + playIconWidth / 2 });
 		
 		//log($(playIcon).offset());
 	//}

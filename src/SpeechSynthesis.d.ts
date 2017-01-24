@@ -7,6 +7,7 @@ declare interface SpeechSynthesisVoice {
 }
 
 declare interface UtteranceEvent extends Event {
+	name: "word" | "sentence";
 	utterance: SpeechSynthesisUtterance;
 	charIndex: number;
 	elapsedTime: number;
