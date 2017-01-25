@@ -56,6 +56,8 @@ var SpeakTheWeb;
             const range = document.createRange();
             range.selectNode(node);
             const nodeRect = range.getBoundingClientRect();
+            if (nodeRect.width === 0 || nodeRect.height === 0)
+                return;
             clientRects.push(nodeRect);
             clientRectUnion.top = Math.min(clientRectUnion.top, nodeRect.top);
             clientRectUnion.left = Math.min(clientRectUnion.left, nodeRect.left);
@@ -78,7 +80,7 @@ var SpeakTheWeb;
         // Try to match up to the next punctuation character that is very likely to be a word
         // Boundary. The MS engines treat parts of abberviations like M.A. as separate words
         // so this would work with them as well.
-        const wordEndMatch = /--|[—\s\.\,\;\"\:\(\)\[\]\{\}\<\>\=\?\!\$\*\%\\\/]|$/.exec(wordAndRemainingText);
+        const wordEndMatch = /--|[—"“”\s\.\,\;\:\(\)\[\]\{\}\<\>\=\?\!\$\*\%\\\/]|$/.exec(wordAndRemainingText);
         if (wordEndMatch == null) {
             return wordStartOffset;
         }
@@ -88,7 +90,7 @@ var SpeakTheWeb;
         // wasn't an apostrophe and the previous to last character wasn't an "s", 
         // consider that apostrophe not to be a part of the word.
         if (/[\'\’]$]/.test(matchedWord) &&
-            sourceText[wordStartOffset - 1] !== "'" &&
+            !/^[\'\’]$]/.test(sourceText[wordStartOffset - 1]) &&
             matchedWord[matchedWord.length - 2] !== "s") {
             wordEndIndex -= 1;
         }
@@ -322,10 +324,16 @@ var SpeakTheWeb;
         playIcon.css("opacity", "0.3");
         //const targetElementOffset = $(targetElement).offset();
         //log(targetElementOffset);
+        //log(getInnerTextNodes(targetElement));
         //log(boundingRectOfInnerTextNodes);
         playIcon.offset({
-            top: $(document).scrollTop() + boundingRectOfInnerTextNodes.top - playIconHeight / 2,
-            left: $(document).scrollLeft() + boundingRectOfInnerTextNodes.right + playIconWidth / 2
+            //top: $(window).scrollTop() + boundingRectOfInnerTextNodes.top - playIconHeight / 2, 
+            //left: $(window).scrollLeft() + boundingRectOfInnerTextNodes.right + playIconWidth / 2 
+            top: $(window).scrollTop() +
+                (boundingRectOfInnerTextNodes.top +
+                    boundingRectOfInnerTextNodes.bottom) / 2 -
+                playIconHeight / 2,
+            left: $(window).scrollLeft() + boundingRectOfInnerTextNodes.left - playIconWidth - 4
         });
         //log($(playIcon).offset());
         //}

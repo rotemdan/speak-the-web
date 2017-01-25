@@ -55,6 +55,9 @@ namespace SpeakTheWeb {
 			const range = document.createRange();
 			range.selectNode(node);
 			const nodeRect = range.getBoundingClientRect()
+			if (nodeRect.width === 0 || nodeRect.height === 0)
+				return;
+
 			clientRects.push(nodeRect);
 
 			clientRectUnion.top = Math.min(clientRectUnion.top, nodeRect.top);

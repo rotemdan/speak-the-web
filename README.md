@@ -11,8 +11,8 @@ The extension isn't ready for end-users yet, but you can test the latest develop
 
 ## How to use
 
-Whenever the cursor hovers an area of text that can be spoken, a small `▶` icon should appear next to the top right corner of that area. To stop the speech press the escape key.
+Whenever the cursor hovers an area of text that can be spoken, a small `▶` icon should appear to the left of that area. To stop the speech press the escape key.
 
 ## Future
 
-Once this gets usable enough it would be published as an independent extension for Chrome and Firefox, Opera and possibly Edge (by then it would be probably moved to the [WebExtensions API](https://developer.mozilla.org/en-US/Add-ons/WebExtensions)).
+Once this gets usable enough it would be published as an independent extension for Chrome and Firefox, Opera and possibly Edge (by then it would have probably been moved over to use the [WebExtensions API](https://developer.mozilla.org/en-US/Add-ons/WebExtensions)).

@@ -261,10 +261,16 @@ namespace SpeakTheWeb {
 		playIcon.css("opacity", "0.3");
 		//const targetElementOffset = $(targetElement).offset();
 		//log(targetElementOffset);
+		//log(getInnerTextNodes(targetElement));
 		//log(boundingRectOfInnerTextNodes);
 		playIcon.offset({ 
-			top: $(document).scrollTop() + boundingRectOfInnerTextNodes.top - playIconHeight / 2, 
-			left: $(document).scrollLeft() + boundingRectOfInnerTextNodes.right + playIconWidth / 2 
+			//top: $(window).scrollTop() + boundingRectOfInnerTextNodes.top - playIconHeight / 2, 
+			//left: $(window).scrollLeft() + boundingRectOfInnerTextNodes.right + playIconWidth / 2 
+			top: $(window).scrollTop() + 
+				 (boundingRectOfInnerTextNodes.top + 
+				 boundingRectOfInnerTextNodes.bottom) / 2 - 
+				 playIconHeight / 2, 
+			left: $(window).scrollLeft() + boundingRectOfInnerTextNodes.left - playIconWidth - 4 
 		});
 
 		//log($(playIcon).offset());
