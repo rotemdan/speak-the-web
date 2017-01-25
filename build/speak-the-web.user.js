@@ -81,7 +81,7 @@ var SpeakTheWeb;
         if (/^e\.g\./.test(wordAndRemainingText))
             return wordStartOffset + 4;
         // Some symbols are pronounced as individual words:
-        if (/^[\.\+\%\=\*\:\/©™&]/.test(wordAndRemainingText))
+        if (/^[\.\+\%\=\*\:\/©™&@]/.test(wordAndRemainingText))
             return wordStartOffset + 1;
         // Try to match up to the next punctuation character that is very likely to be a word
         // Boundary. The MS engines treat parts of abberviations like M.A. as separate words
@@ -159,12 +159,6 @@ var SpeakTheWeb;
             timeCursorHasLastMoved = Infinity;
         }
     });
-    const playIcon = $("<span id='speakTheWebPlayIcon'>&#x25B6;</span>");
-    $("body").append(playIcon);
-    const playIconWidth = playIcon.width();
-    const playIconHeight = playIcon.height();
-    const highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
-    $("body").append(highlightingRectangle);
     $("head").append(`
 	<style>
 			.currentlySpokenElement { box-shadow: 0 0 0 2px #424242 !important; }
@@ -185,11 +179,19 @@ var SpeakTheWeb;
 			#speakTheWebHighlightingRectangle {
 				position: absolute; 
 				display: inline; 
-				visiblity: hidden;
 				z-index:99999;
-				background-color: #ffcb5b;
+				//background-color: rgb(254, 242, 192);
+				background-color: #ffcd00;
+				opacity: 0;
 			}
 	</style>`);
+    const playIcon = $("<span id='speakTheWebPlayIcon'>&#x25B6;</span>");
+    $("body").append(playIcon);
+    const playIconWidth = playIcon.width();
+    const playIconHeight = playIcon.height();
+    const highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
+    $("body").append(highlightingRectangle);
+    //highlightingRectangle.offset({ top: 0, left: 0 });	
     let currentTargetElement;
     const speakTargetElement = () => __awaiter(this, void 0, void 0, function* () {
         if (!currentTargetElement)
@@ -221,7 +223,7 @@ var SpeakTheWeb;
         }
         return new Promise((resolve, reject) => {
             utterance.onend = (event) => {
-                highlightingRectangle.css("visibility", "hidden");
+                highlightingRectangle.css("opacity", "0");
                 resolve();
             };
             utterance.onerror = (event) => {
@@ -239,18 +241,17 @@ var SpeakTheWeb;
                         const nodeText = node.textContent;
                         //const nodeTextEndOffset = nodeTextStartOffset + nodeText.length;
                         if (nodeTextStartOffset + nodeText.length > wordStartOffset) {
-                            SpeakTheWeb.log(node);
+                            //log(node);
                             const nodeWordStartOffset = wordStartOffset - nodeTextStartOffset;
                             const nodeWordEndOffset = Math.min(nodeWordStartOffset + word.length, nodeText.length);
-                            const rect = SpeakTheWeb.getBoundingRectangleOfTextNodeRange(node, nodeWordStartOffset, nodeWordEndOffset);
-                            highlightingRectangle.css("visibility", "visible");
-                            highlightingRectangle.css("opacity", "0.3");
+                            const wordRect = SpeakTheWeb.getBoundingRectangleOfTextNodeRange(node, nodeWordStartOffset, nodeWordEndOffset);
+                            highlightingRectangle.width(wordRect.width);
+                            highlightingRectangle.height(wordRect.height);
                             highlightingRectangle.offset({
-                                top: $(window).scrollTop() + rect.top,
-                                left: $(window).scrollLeft() + rect.left
+                                top: $(window).scrollTop() + wordRect.top,
+                                left: $(window).scrollLeft() + wordRect.left
                             });
-                            highlightingRectangle.width(rect.width);
-                            highlightingRectangle.height(rect.height);
+                            highlightingRectangle.css("opacity", "0.15");
                             break;
                         }
                         nodeTextStartOffset += nodeText.length;
