@@ -77,7 +77,6 @@ namespace SpeakTheWeb {
 				position: absolute; 
 				display: inline; 
 				z-index:99999;
-				//background-color: rgb(254, 242, 192);
 				background-color: #ffcd00;
 				opacity: 0;
 			}
@@ -90,15 +89,12 @@ namespace SpeakTheWeb {
 
 	const highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
 	$("body").append(highlightingRectangle);
-	//highlightingRectangle.offset({ top: 0, left: 0 });	
 
-	let currentTargetElement: HTMLElement | undefined;
-
-	const speakTargetElement = async () => {
-		if (!currentTargetElement)
+	const speakElement = async (element: HTMLElement) => {
+		if (!element)
 			return;
 
-		const textNodes = getInnerTextNodes(currentTargetElement);
+		const textNodes = getInnerTextNodes(element);
 		let text = "";
 
 		textNodes.forEach((node) => {
@@ -109,7 +105,7 @@ namespace SpeakTheWeb {
 
 		text = text.replace(/[\r\n]/g, " ");
 
-		log("Target element:", currentTargetElement);
+		log("Target element:", element);
 		log("Text:", text);
 
 		speechSynthesis.cancel();
@@ -183,9 +179,10 @@ namespace SpeakTheWeb {
 		});
 	}
 
+	let currentTargetElement: HTMLElement | undefined;
 	playIcon.on("mousedown", () => {
 		if (currentTargetElement)
-			speakTargetElement();
+			speakElement(currentTargetElement);
 	});
 
 	playIcon.on("mouseenter", () => {

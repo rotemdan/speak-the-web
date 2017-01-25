@@ -180,7 +180,6 @@ var SpeakTheWeb;
 				position: absolute; 
 				display: inline; 
 				z-index:99999;
-				//background-color: rgb(254, 242, 192);
 				background-color: #ffcd00;
 				opacity: 0;
 			}
@@ -191,19 +190,17 @@ var SpeakTheWeb;
     const playIconHeight = playIcon.height();
     const highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
     $("body").append(highlightingRectangle);
-    //highlightingRectangle.offset({ top: 0, left: 0 });	
-    let currentTargetElement;
-    const speakTargetElement = () => __awaiter(this, void 0, void 0, function* () {
-        if (!currentTargetElement)
+    const speakElement = (element) => __awaiter(this, void 0, void 0, function* () {
+        if (!element)
             return;
-        const textNodes = SpeakTheWeb.getInnerTextNodes(currentTargetElement);
+        const textNodes = SpeakTheWeb.getInnerTextNodes(element);
         let text = "";
         textNodes.forEach((node) => {
             text += node.textContent;
         });
         SpeakTheWeb.log(textNodes);
         text = text.replace(/[\r\n]/g, " ");
-        SpeakTheWeb.log("Target element:", currentTargetElement);
+        SpeakTheWeb.log("Target element:", element);
         SpeakTheWeb.log("Text:", text);
         speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
@@ -261,9 +258,10 @@ var SpeakTheWeb;
             speechSynthesis.speak(utterance);
         });
     });
+    let currentTargetElement;
     playIcon.on("mousedown", () => {
         if (currentTargetElement)
-            speakTargetElement();
+            speakElement(currentTargetElement);
     });
     playIcon.on("mouseenter", () => {
         playIcon.css("opacity", "1.0");
