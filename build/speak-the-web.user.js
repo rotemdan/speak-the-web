@@ -43,6 +43,14 @@ var SpeakTheWeb;
         }
         return result;
     };
+    SpeakTheWeb.getBoundingRectangleOfTextNodeRange = (node, startOffset, endOffset) => {
+        if (node.nodeType !== Node.TEXT_NODE)
+            throw new TypeError("Node must be a text node");
+        const range = document.createRange();
+        range.setStart(node, startOffset || 0);
+        range.setEnd(node, endOffset || node.textContent.length);
+        return range.getBoundingClientRect();
+    };
     SpeakTheWeb.getBoundingRectangleOfInnerTextNodes = (element) => {
         const allTextNodes = SpeakTheWeb.getInnerTextNodes(element);
         const clientRects = [];
@@ -53,9 +61,7 @@ var SpeakTheWeb;
             right: 0
         };
         allTextNodes.forEach((node) => {
-            const range = document.createRange();
-            range.selectNode(node);
-            const nodeRect = range.getBoundingClientRect();
+            const nodeRect = SpeakTheWeb.getBoundingRectangleOfTextNodeRange(node);
             if (nodeRect.width === 0 || nodeRect.height === 0)
                 return;
             clientRects.push(nodeRect);
@@ -75,12 +81,12 @@ var SpeakTheWeb;
         if (/^e\.g\./.test(wordAndRemainingText))
             return wordStartOffset + 4;
         // Some symbols are pronounced as individual words:
-        if (/^[\.\+\%\=\*\:\/]/.test(wordAndRemainingText))
+        if (/^[\.\+\%\=\*\:\/©™&]/.test(wordAndRemainingText))
             return wordStartOffset + 1;
         // Try to match up to the next punctuation character that is very likely to be a word
         // Boundary. The MS engines treat parts of abberviations like M.A. as separate words
         // so this would work with them as well.
-        const wordEndMatch = /--|[—"“”\s\.\,\;\:\(\)\[\]\{\}\<\>\=\?\!\$\*\%\\\/]|$/.exec(wordAndRemainingText);
+        const wordEndMatch = /--|[\s—"“”@&\^\.\,\;\:\(\)\[\]\{\}\<\>\=\?\!\$\*\%\/\\]|$/.exec(wordAndRemainingText);
         if (wordEndMatch == null) {
             return wordStartOffset;
         }
@@ -153,17 +159,19 @@ var SpeakTheWeb;
             timeCursorHasLastMoved = Infinity;
         }
     });
-    $("body").append("<span id='speakTheWebPlayIcon'>&#x25B6;</span>");
-    const playIcon = $("#speakTheWebPlayIcon");
+    const playIcon = $("<span id='speakTheWebPlayIcon'>&#x25B6;</span>");
+    $("body").append(playIcon);
     const playIconWidth = playIcon.width();
     const playIconHeight = playIcon.height();
+    const highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
+    $("body").append(highlightingRectangle);
     $("head").append(`
 	<style>
 			.currentlySpokenElement { box-shadow: 0 0 0 2px #424242 !important; }
 			#speakTheWebPlayIcon { 
 				position: absolute; 
 				display: inline; 
-				visiblity: hidden; 
+				visiblity: hidden;
 				opacity: 0; 
 				transition: opacity 0.3s; 
 				cursor: pointer; 
@@ -172,6 +180,14 @@ var SpeakTheWeb;
 				color: black;
 				font-family: Arial,Helvetica Neue,Helvetica,sans-serif;
 				font-size: 14px;
+			}
+
+			#speakTheWebHighlightingRectangle {
+				position: absolute; 
+				display: inline; 
+				visiblity: hidden;
+				z-index:99999;
+				background-color: #ffcb5b;
 			}
 	</style>`);
     let currentTargetElement;
@@ -205,6 +221,7 @@ var SpeakTheWeb;
         }
         return new Promise((resolve, reject) => {
             utterance.onend = (event) => {
+                highlightingRectangle.css("visibility", "hidden");
                 resolve();
             };
             utterance.onerror = (event) => {
@@ -213,17 +230,30 @@ var SpeakTheWeb;
             };
             utterance.onboundary = (event) => {
                 if (event.name === "word") {
-                    SpeakTheWeb.log(event.charIndex);
-                    let nodeTextOffset = 0;
+                    const wordStartOffset = event.charIndex;
+                    const wordEndOffset = SpeakTheWeb.guessWordEndOffset(text, wordStartOffset);
+                    const word = text.substring(wordStartOffset, wordEndOffset);
+                    SpeakTheWeb.log(word);
+                    let nodeTextStartOffset = 0;
                     for (let node of textNodes) {
-                        const eventOffset = event.charIndex;
                         const nodeText = node.textContent;
-                        if (nodeTextOffset + nodeText.length > event.charIndex) {
-                            //log(node);
-                            SpeakTheWeb.log(text.substring(eventOffset, SpeakTheWeb.guessWordEndOffset(text, eventOffset)));
+                        //const nodeTextEndOffset = nodeTextStartOffset + nodeText.length;
+                        if (nodeTextStartOffset + nodeText.length > wordStartOffset) {
+                            SpeakTheWeb.log(node);
+                            const nodeWordStartOffset = wordStartOffset - nodeTextStartOffset;
+                            const nodeWordEndOffset = Math.min(nodeWordStartOffset + word.length, nodeText.length);
+                            const rect = SpeakTheWeb.getBoundingRectangleOfTextNodeRange(node, nodeWordStartOffset, nodeWordEndOffset);
+                            highlightingRectangle.css("visibility", "visible");
+                            highlightingRectangle.css("opacity", "0.3");
+                            highlightingRectangle.offset({
+                                top: $(window).scrollTop() + rect.top,
+                                left: $(window).scrollLeft() + rect.left
+                            });
+                            highlightingRectangle.width(rect.width);
+                            highlightingRectangle.height(rect.height);
                             break;
                         }
-                        nodeTextOffset += nodeText.length;
+                        nodeTextStartOffset += nodeText.length;
                     }
                 }
             };
@@ -323,8 +353,6 @@ var SpeakTheWeb;
         //if (playIcon.css("display") === "none") {
         playIcon.css("opacity", "0.3");
         //const targetElementOffset = $(targetElement).offset();
-        //log(targetElementOffset);
-        //log(getInnerTextNodes(targetElement));
         //log(boundingRectOfInnerTextNodes);
         playIcon.offset({
             //top: $(window).scrollTop() + boundingRectOfInnerTextNodes.top - playIconHeight / 2, 

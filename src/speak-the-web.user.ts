@@ -56,10 +56,13 @@ namespace SpeakTheWeb {
 		}
 	});
 
-	$("body").append("<span id='speakTheWebPlayIcon'>&#x25B6;</span>");
-	const playIcon = $("#speakTheWebPlayIcon");
+	const playIcon = $("<span id='speakTheWebPlayIcon'>&#x25B6;</span>");
+	$("body").append(playIcon);
 	const playIconWidth = playIcon.width();
 	const playIconHeight = playIcon.height();
+
+	const highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
+	$("body").append(highlightingRectangle);
 
 	$("head").append(`
 	<style>
@@ -67,7 +70,7 @@ namespace SpeakTheWeb {
 			#speakTheWebPlayIcon { 
 				position: absolute; 
 				display: inline; 
-				visiblity: hidden; 
+				visiblity: hidden;
 				opacity: 0; 
 				transition: opacity 0.3s; 
 				cursor: pointer; 
@@ -76,6 +79,14 @@ namespace SpeakTheWeb {
 				color: black;
 				font-family: Arial,Helvetica Neue,Helvetica,sans-serif;
 				font-size: 14px;
+			}
+
+			#speakTheWebHighlightingRectangle {
+				position: absolute; 
+				display: inline; 
+				visiblity: hidden;
+				z-index:99999;
+				background-color: #ffcb5b;
 			}
 	</style>`);
 
@@ -119,6 +130,7 @@ namespace SpeakTheWeb {
 
 		return new Promise<void>((resolve, reject) => {
 			utterance.onend = (event) => {
+				highlightingRectangle.css("visibility", "hidden");
 				resolve();
 			}
 
@@ -129,21 +141,37 @@ namespace SpeakTheWeb {
 
 			utterance.onboundary = (event) => {
 				if (event.name === "word") {
-					log(event.charIndex);
+					const wordStartOffset = event.charIndex;
+					const wordEndOffset = guessWordEndOffset(text, wordStartOffset);
+					const word = text.substring(wordStartOffset, wordEndOffset);
+					log(word);
 
-					let nodeTextOffset = 0;
+					let nodeTextStartOffset = 0;
 
 					for (let node of textNodes) {
-						const eventOffset = event.charIndex;
 						const nodeText = node.textContent!;
+						//const nodeTextEndOffset = nodeTextStartOffset + nodeText.length;
 
-						if (nodeTextOffset + nodeText.length > event.charIndex) {
-							//log(node);
-							log(text.substring(eventOffset, guessWordEndOffset(text, eventOffset)));
+						if (nodeTextStartOffset + nodeText.length > wordStartOffset) {
+							log(node);
+
+							const nodeWordStartOffset = wordStartOffset - nodeTextStartOffset;
+							const nodeWordEndOffset = Math.min(nodeWordStartOffset + word.length, nodeText.length);
+							const rect = getBoundingRectangleOfTextNodeRange(node, nodeWordStartOffset, nodeWordEndOffset);
+							highlightingRectangle.css("visibility", "visible");
+							highlightingRectangle.css("opacity", "0.3");
+							highlightingRectangle.offset({ 
+								top: $(window).scrollTop() + rect.top,
+								left: $(window).scrollLeft() + rect.left
+							});
+
+							highlightingRectangle.width(rect.width);
+							highlightingRectangle.height(rect.height);
+
 							break;
 						}
 
-						nodeTextOffset += nodeText.length;
+						nodeTextStartOffset += nodeText.length;
 					}
 				}
 			}
@@ -260,17 +288,16 @@ namespace SpeakTheWeb {
 		//if (playIcon.css("display") === "none") {
 		playIcon.css("opacity", "0.3");
 		//const targetElementOffset = $(targetElement).offset();
-		//log(targetElementOffset);
-		//log(getInnerTextNodes(targetElement));
+		
 		//log(boundingRectOfInnerTextNodes);
-		playIcon.offset({ 
+		playIcon.offset({
 			//top: $(window).scrollTop() + boundingRectOfInnerTextNodes.top - playIconHeight / 2, 
 			//left: $(window).scrollLeft() + boundingRectOfInnerTextNodes.right + playIconWidth / 2 
-			top: $(window).scrollTop() + 
-				 (boundingRectOfInnerTextNodes.top + 
-				 boundingRectOfInnerTextNodes.bottom) / 2 - 
-				 playIconHeight / 2, 
-			left: $(window).scrollLeft() + boundingRectOfInnerTextNodes.left - playIconWidth - 4 
+			top: $(window).scrollTop() +
+			(boundingRectOfInnerTextNodes.top +
+				boundingRectOfInnerTextNodes.bottom) / 2 -
+			playIconHeight / 2,
+			left: $(window).scrollLeft() + boundingRectOfInnerTextNodes.left - playIconWidth - 4
 		});
 
 		//log($(playIcon).offset());

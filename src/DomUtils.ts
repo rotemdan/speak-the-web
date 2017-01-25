@@ -40,6 +40,16 @@ namespace SpeakTheWeb {
 
 	type Rect = { top: number, left: number, bottom: number, right: number };
 
+	export const getBoundingRectangleOfTextNodeRange = (node: Node, startOffset?: number, endOffset?: number): ClientRect => {
+		if (node.nodeType !== Node.TEXT_NODE)
+			throw new TypeError("Node must be a text node");
+
+		const range = document.createRange();
+		range.setStart(node, startOffset || 0);
+		range.setEnd(node, endOffset || node.textContent!.length);
+		return range.getBoundingClientRect();
+	}
+
 	export const getBoundingRectangleOfInnerTextNodes = (element: Element) => {
 		const allTextNodes = getInnerTextNodes(element);
 
@@ -52,9 +62,8 @@ namespace SpeakTheWeb {
 		};
 
 		allTextNodes.forEach((node) => {
-			const range = document.createRange();
-			range.selectNode(node);
-			const nodeRect = range.getBoundingClientRect()
+			const nodeRect = getBoundingRectangleOfTextNodeRange(node);
+
 			if (nodeRect.width === 0 || nodeRect.height === 0)
 				return;
 
