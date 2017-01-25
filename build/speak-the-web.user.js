@@ -78,7 +78,9 @@ var SpeakTheWeb;
 (function (SpeakTheWeb) {
     SpeakTheWeb.guessWordEndOffset = function (sourceText, wordStartOffset) {
         const wordAndRemainingText = sourceText.substring(wordStartOffset);
-        if (/^e\.g\./.test(wordAndRemainingText))
+        // Handle some common abberviations
+        const first4Letters = wordAndRemainingText.substring(0, 4).toLowerCase();
+        if (first4Letters === "e.g." || first4Letters === "i.e.")
             return wordStartOffset + 4;
         // Some symbols are pronounced as individual words:
         if (/^[\.\+\%\=\*\:\/©™&@]/.test(wordAndRemainingText))
