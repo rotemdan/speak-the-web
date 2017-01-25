@@ -6,7 +6,7 @@ namespace SpeakTheWeb {
 			return wordStartOffset + 4;
 
 		// Some symbols are pronounced as individual words:
-		if (/^[\.\+\%\=\*\:\/©™&]/.test(wordAndRemainingText))
+		if (/^[\.\+\%\=\*\:\/©™&@]/.test(wordAndRemainingText))
 			return wordStartOffset + 1;
 
 		// Try to match up to the next punctuation character that is very likely to be a word

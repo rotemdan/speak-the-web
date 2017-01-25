@@ -56,14 +56,6 @@ namespace SpeakTheWeb {
 		}
 	});
 
-	const playIcon = $("<span id='speakTheWebPlayIcon'>&#x25B6;</span>");
-	$("body").append(playIcon);
-	const playIconWidth = playIcon.width();
-	const playIconHeight = playIcon.height();
-
-	const highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
-	$("body").append(highlightingRectangle);
-
 	$("head").append(`
 	<style>
 			.currentlySpokenElement { box-shadow: 0 0 0 2px #424242 !important; }
@@ -84,11 +76,21 @@ namespace SpeakTheWeb {
 			#speakTheWebHighlightingRectangle {
 				position: absolute; 
 				display: inline; 
-				visiblity: hidden;
 				z-index:99999;
-				background-color: #ffcb5b;
+				//background-color: rgb(254, 242, 192);
+				background-color: #ffcd00;
+				opacity: 0;
 			}
 	</style>`);
+
+	const playIcon = $("<span id='speakTheWebPlayIcon'>&#x25B6;</span>");
+	$("body").append(playIcon);
+	const playIconWidth = playIcon.width();
+	const playIconHeight = playIcon.height();
+
+	const highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
+	$("body").append(highlightingRectangle);
+	//highlightingRectangle.offset({ top: 0, left: 0 });	
 
 	let currentTargetElement: HTMLElement | undefined;
 
@@ -130,7 +132,7 @@ namespace SpeakTheWeb {
 
 		return new Promise<void>((resolve, reject) => {
 			utterance.onend = (event) => {
-				highlightingRectangle.css("visibility", "hidden");
+				highlightingRectangle.css("opacity", "0");
 				resolve();
 			}
 
@@ -153,20 +155,21 @@ namespace SpeakTheWeb {
 						//const nodeTextEndOffset = nodeTextStartOffset + nodeText.length;
 
 						if (nodeTextStartOffset + nodeText.length > wordStartOffset) {
-							log(node);
+							//log(node);
 
 							const nodeWordStartOffset = wordStartOffset - nodeTextStartOffset;
 							const nodeWordEndOffset = Math.min(nodeWordStartOffset + word.length, nodeText.length);
-							const rect = getBoundingRectangleOfTextNodeRange(node, nodeWordStartOffset, nodeWordEndOffset);
-							highlightingRectangle.css("visibility", "visible");
-							highlightingRectangle.css("opacity", "0.3");
-							highlightingRectangle.offset({ 
-								top: $(window).scrollTop() + rect.top,
-								left: $(window).scrollLeft() + rect.left
+							const wordRect = getBoundingRectangleOfTextNodeRange(node, nodeWordStartOffset, nodeWordEndOffset);
+
+							highlightingRectangle.width(wordRect.width);
+							highlightingRectangle.height(wordRect.height);
+
+							highlightingRectangle.offset({
+								top: $(window).scrollTop() + wordRect.top,
+								left: $(window).scrollLeft() + wordRect.left
 							});
 
-							highlightingRectangle.width(rect.width);
-							highlightingRectangle.height(rect.height);
+							highlightingRectangle.css("opacity", "0.15");
 
 							break;
 						}
@@ -288,7 +291,7 @@ namespace SpeakTheWeb {
 		//if (playIcon.css("display") === "none") {
 		playIcon.css("opacity", "0.3");
 		//const targetElementOffset = $(targetElement).offset();
-		
+
 		//log(boundingRectOfInnerTextNodes);
 		playIcon.offset({
 			//top: $(window).scrollTop() + boundingRectOfInnerTextNodes.top - playIconHeight / 2, 
