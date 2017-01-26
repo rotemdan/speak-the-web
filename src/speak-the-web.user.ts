@@ -3,7 +3,7 @@ declare function GM_setValue(key: string, value: string): void;
 
 namespace SpeakTheWeb {
 
-	$(document).on("keypress", (e) => {
+	$(window).on("keypress", (e) => {
 		if (e.ctrlKey === true && e.which === "`".charCodeAt(0)) {
 			if (GM_getValue("scriptEnabled") !== "false") {
 				GM_setValue("scriptEnabled", "false");

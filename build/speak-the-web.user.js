@@ -133,7 +133,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 var SpeakTheWeb;
 (function (SpeakTheWeb) {
-    $(document).on("keypress", (e) => {
+    $(window).on("keypress", (e) => {
         if (e.ctrlKey === true && e.which === "`".charCodeAt(0)) {
             if (GM_getValue("scriptEnabled") !== "false") {
                 GM_setValue("scriptEnabled", "false");
