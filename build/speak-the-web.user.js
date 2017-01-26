@@ -13,16 +13,16 @@
 var SpeakTheWeb;
 (function (SpeakTheWeb) {
     SpeakTheWeb.log = console.log;
-    SpeakTheWeb.isElementCompletelyVisible = (element) => {
-        const elementClientRect = element.getBoundingClientRect();
+    SpeakTheWeb.isElementCompletelyVisible = function (element) {
+        var elementClientRect = element.getBoundingClientRect();
         return (elementClientRect.top >= 0 &&
             elementClientRect.left >= 0 &&
             elementClientRect.bottom <= window.innerHeight &&
             elementClientRect.right <= window.innerWidth);
     };
-    SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent = (element) => {
-        const targetTextContent = $(element).text();
-        const matchingChildren = $(element).children().filter((index, child) => $(child).text() === targetTextContent);
+    SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent = function (element) {
+        var targetTextContent = $(element).text();
+        var matchingChildren = $(element).children().filter(function (index, child) { return $(child).text() === targetTextContent; });
         if (matchingChildren.length > 0) {
             return SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent(matchingChildren.get(0));
         }
@@ -30,11 +30,11 @@ var SpeakTheWeb;
             return element;
         }
     };
-    SpeakTheWeb.getInnerTextNodes = (element) => {
-        let result = [];
-        const allChildNodes = $(element).contents();
-        for (let i = 0; i < allChildNodes.length; i++) {
-            const node = allChildNodes.get(i);
+    SpeakTheWeb.getInnerTextNodes = function (element) {
+        var result = [];
+        var allChildNodes = $(element).contents();
+        for (var i = 0; i < allChildNodes.length; i++) {
+            var node = allChildNodes.get(i);
             if (node.nodeType === Node.TEXT_NODE) {
                 result.push(node);
             }
@@ -44,8 +44,8 @@ var SpeakTheWeb;
         }
         return result;
     };
-    class Rect {
-        constructor(clientRect) {
+    var Rect = (function () {
+        function Rect(clientRect) {
             this.top = 0;
             this.left = 0;
             this.bottom = 0;
@@ -57,30 +57,39 @@ var SpeakTheWeb;
                 this.right = clientRect.right;
             }
         }
-        get width() {
-            return this.right - this.left;
-        }
-        get height() {
-            return this.bottom - this.top;
-        }
-    }
+        Object.defineProperty(Rect.prototype, "width", {
+            get: function () {
+                return this.right - this.left;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Rect.prototype, "height", {
+            get: function () {
+                return this.bottom - this.top;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return Rect;
+    }());
     ;
-    SpeakTheWeb.getBoundingRectangleOfTextNodeRange = (node, startOffset, endOffset) => {
+    SpeakTheWeb.getBoundingRectangleOfTextNodeRange = function (node, startOffset, endOffset) {
         if (node.nodeType !== Node.TEXT_NODE)
             throw new TypeError("Node must be a text node");
-        const range = document.createRange();
+        var range = document.createRange();
         range.setStart(node, startOffset || 0);
         range.setEnd(node, endOffset || node.textContent.length);
         return new Rect(range.getBoundingClientRect());
     };
-    SpeakTheWeb.getBoundingRectangleOfInnerTextNodes = (element) => {
-        const allTextNodes = SpeakTheWeb.getInnerTextNodes(element);
-        const rects = [];
-        const rectUnion = new Rect();
+    SpeakTheWeb.getBoundingRectangleOfInnerTextNodes = function (element) {
+        var allTextNodes = SpeakTheWeb.getInnerTextNodes(element);
+        var rects = [];
+        var rectUnion = new Rect();
         rectUnion.top = Infinity,
             rectUnion.left = Infinity,
-            allTextNodes.forEach((node) => {
-                const nodeRect = SpeakTheWeb.getBoundingRectangleOfTextNodeRange(node);
+            allTextNodes.forEach(function (node) {
+                var nodeRect = SpeakTheWeb.getBoundingRectangleOfTextNodeRange(node);
                 if (nodeRect.width === 0 || nodeRect.height === 0)
                     return;
                 rects.push(nodeRect);
@@ -96,9 +105,9 @@ var SpeakTheWeb;
 var SpeakTheWeb;
 (function (SpeakTheWeb) {
     SpeakTheWeb.guessWordEndOffset = function (sourceText, wordStartOffset) {
-        const wordAndRemainingText = sourceText.substring(wordStartOffset);
+        var wordAndRemainingText = sourceText.substring(wordStartOffset);
         // Handle some common abberviations
-        const first4Letters = wordAndRemainingText.substring(0, 4).toLowerCase();
+        var first4Letters = wordAndRemainingText.substring(0, 4).toLowerCase();
         if (first4Letters === "e.g." || first4Letters === "i.e.")
             return wordStartOffset + 4;
         // Some symbols are pronounced as individual words:
@@ -107,12 +116,12 @@ var SpeakTheWeb;
         // Try to match up to the next punctuation character that is very likely to be a word
         // Boundary. The MS engines treat parts of abberviations like M.A. as separate words
         // so this would work with them as well.
-        const wordEndMatch = /--|[\s—"“”@&`\^\.\,\;\:\(\)\[\]\{\}\<\>\=\?\!\$\*\%\/\\]|$/.exec(wordAndRemainingText);
+        var wordEndMatch = /--|[\s—"“”@&`\^\.\,\;\:\(\)\[\]\{\}\<\>\=\?\!\$\*\%\/\\]|$/.exec(wordAndRemainingText);
         if (wordEndMatch == null) {
             return wordStartOffset;
         }
-        let wordEndIndex = wordEndMatch.index;
-        const matchedWord = wordAndRemainingText.substring(0, wordEndIndex);
+        var wordEndIndex = wordEndMatch.index;
+        var matchedWord = wordAndRemainingText.substring(0, wordEndIndex);
         // If the last letter was an apostrophe (') character, and the character before the word start
         // wasn't an apostrophe and the previous to last character wasn't an "s", 
         // consider that apostrophe not to be a part of the word.
@@ -132,9 +141,37 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t;
+    return { next: verb(0), "throw": verb(1), "return": verb(2) };
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 var SpeakTheWeb;
 (function (SpeakTheWeb) {
-    $(window).on("keypress", (e) => {
+    var _this = this;
+    $(window).on("keypress", function (e) {
         if (e.ctrlKey === true && e.which === "`".charCodeAt(0)) {
             if (GM_getValue("scriptEnabled") !== "false") {
                 GM_setValue("scriptEnabled", "false");
@@ -149,91 +186,88 @@ var SpeakTheWeb;
             speechSynthesis.cancel();
         }
     });
-    $("head").append(`
-	<style>
-			#speakTheWebHighlightingRectangle {
-				position: absolute; 
-				display: inline; 
-				z-index:99999;
-				background-color: #ffcd00;
-				opacity: 0;
-			}
-	</style>`);
-    const highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
+    $("head").append("\n\t<style>\n\t\t\t#speakTheWebHighlightingRectangle {\n\t\t\t\tposition: absolute; \n\t\t\t\tdisplay: inline; \n\t\t\t\tz-index:99999;\n\t\t\t\tbackground-color: #ffcd00;\n\t\t\t\topacity: 0;\n\t\t\t}\n\t</style>");
+    var highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
     $("body").append(highlightingRectangle);
-    const speakElement = (element) => __awaiter(this, void 0, void 0, function* () {
-        if (!element)
-            return;
-        const textNodes = SpeakTheWeb.getInnerTextNodes(element);
-        let text = "";
-        textNodes.forEach((node) => {
-            text += node.textContent;
-        });
-        SpeakTheWeb.log(textNodes);
-        text = text.replace(/[\r\n]/g, " ");
-        SpeakTheWeb.log("Target element:", element);
-        SpeakTheWeb.log("Text:", text);
-        speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        if (/Chrome/.test(navigator.userAgent)) {
-            for (let voice of speechSynthesis.getVoices()) {
-                if (voice.localService === true) {
-                    utterance.voice = voice;
-                }
-            }
-        }
-        else {
-            for (let voice of speechSynthesis.getVoices()) {
-                if (voice.name.indexOf("Microsoft Zira Desktop") === 0) {
-                    utterance.voice = voice;
-                }
-            }
-        }
-        return new Promise((resolve, reject) => {
-            utterance.onend = (event) => {
-                highlightingRectangle.css("opacity", "0");
-                resolve();
-            };
-            utterance.onerror = (event) => {
-                SpeakTheWeb.log("Utterance error:", event.error);
-                reject(event.error);
-            };
-            utterance.onboundary = (event) => {
-                if (event.name === "word") {
-                    const wordStartOffset = event.charIndex;
-                    const wordEndOffset = SpeakTheWeb.guessWordEndOffset(text, wordStartOffset);
-                    const word = text.substring(wordStartOffset, wordEndOffset);
-                    //log(word);
-                    let nodeTextStartOffset = 0;
-                    for (let node of textNodes) {
-                        const nodeText = node.textContent;
-                        if (nodeTextStartOffset + nodeText.length > wordStartOffset) {
-                            const nodeWordStartOffset = wordStartOffset - nodeTextStartOffset;
-                            const nodeWordEndOffset = Math.min(nodeWordStartOffset + word.length, nodeText.length);
-                            const wordRect = SpeakTheWeb.getBoundingRectangleOfTextNodeRange(node, nodeWordStartOffset, nodeWordEndOffset);
-                            highlightingRectangle.width(wordRect.width);
-                            highlightingRectangle.height(wordRect.height);
-                            highlightingRectangle.offset({
-                                top: $(window).scrollTop() + wordRect.top,
-                                left: $(window).scrollLeft() + wordRect.left
-                            });
-                            highlightingRectangle.css("opacity", "0.15");
-                            break;
-                        }
-                        nodeTextStartOffset += nodeText.length;
+    var speakElement = function (element) { return __awaiter(_this, void 0, void 0, function () {
+        var textNodes, text, utterance, _i, _a, voice, _b, _c, voice;
+        return __generator(this, function (_d) {
+            if (!element)
+                return [2 /*return*/];
+            textNodes = SpeakTheWeb.getInnerTextNodes(element);
+            text = "";
+            textNodes.forEach(function (node) {
+                text += node.textContent;
+            });
+            SpeakTheWeb.log(textNodes);
+            text = text.replace(/[\r\n]/g, " ");
+            SpeakTheWeb.log("Target element:", element);
+            SpeakTheWeb.log("Text:", text);
+            speechSynthesis.cancel();
+            utterance = new SpeechSynthesisUtterance(text);
+            if (/Chrome/.test(navigator.userAgent)) {
+                for (_i = 0, _a = speechSynthesis.getVoices(); _i < _a.length; _i++) {
+                    voice = _a[_i];
+                    if (voice.localService === true) {
+                        utterance.voice = voice;
                     }
                 }
-            };
-            speechSynthesis.speak(utterance);
+            }
+            else {
+                for (_b = 0, _c = speechSynthesis.getVoices(); _b < _c.length; _b++) {
+                    voice = _c[_b];
+                    if (voice.name.indexOf("Microsoft Zira Desktop") === 0) {
+                        utterance.voice = voice;
+                    }
+                }
+            }
+            return [2 /*return*/, new Promise(function (resolve, reject) {
+                    utterance.onend = function (event) {
+                        highlightingRectangle.css("opacity", "0");
+                        resolve();
+                    };
+                    utterance.onerror = function (event) {
+                        SpeakTheWeb.log("Utterance error:", event.error);
+                        reject(event.error);
+                    };
+                    utterance.onboundary = function (event) {
+                        if (event.name === "word") {
+                            var wordStartOffset = event.charIndex;
+                            var wordEndOffset = SpeakTheWeb.guessWordEndOffset(text, wordStartOffset);
+                            var word = text.substring(wordStartOffset, wordEndOffset);
+                            //log(word);
+                            var nodeTextStartOffset = 0;
+                            for (var _i = 0, textNodes_1 = textNodes; _i < textNodes_1.length; _i++) {
+                                var node = textNodes_1[_i];
+                                var nodeText = node.textContent;
+                                if (nodeTextStartOffset + nodeText.length > wordStartOffset) {
+                                    var nodeWordStartOffset = wordStartOffset - nodeTextStartOffset;
+                                    var nodeWordEndOffset = Math.min(nodeWordStartOffset + word.length, nodeText.length);
+                                    var wordRect = SpeakTheWeb.getBoundingRectangleOfTextNodeRange(node, nodeWordStartOffset, nodeWordEndOffset);
+                                    highlightingRectangle.width(wordRect.width);
+                                    highlightingRectangle.height(wordRect.height);
+                                    highlightingRectangle.offset({
+                                        top: $(window).scrollTop() + wordRect.top,
+                                        left: $(window).scrollLeft() + wordRect.left
+                                    });
+                                    highlightingRectangle.css("opacity", "0.15");
+                                    break;
+                                }
+                                nodeTextStartOffset += nodeText.length;
+                            }
+                        }
+                    };
+                    speechSynthesis.speak(utterance);
+                })];
         });
-    });
-    let currentlySpokenElement;
-    $(window).on("click", (event) => {
+    }); };
+    var currentlySpokenElement;
+    $(window).on("click", function (event) {
         if (GM_getValue("scriptEnabled") === "false") {
             return;
         }
         if (event.button === 1 && event.ctrlKey) {
-            const hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
+            var hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
             if ($(hoveredElement).closest("a").length > 0) {
                 event.preventDefault();
                 return false;
@@ -241,49 +275,58 @@ var SpeakTheWeb;
         }
         return true;
     });
-    $(window).on("mousedown", (event) => __awaiter(this, void 0, void 0, function* () {
-        if (GM_getValue("scriptEnabled") === "false") {
-            return;
-        }
-        if (event.button !== 1)
-            return;
-        const hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
-        if ($(hoveredElement).closest("a").length > 0) {
-            if (!event.ctrlKey)
-                return;
-            event.preventDefault();
-        }
-        const boundingElement = $(hoveredElement)
-            .closest("pre,code,li,td,th,dd,dt,p,div,h1,h2,h3,h4,h5,a,section,article,aside,footer,header,button,caption")
-            .get(0);
-        const targetElement = SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent(boundingElement);
-        // Make sure the element is not a container of some sort
-        if ($("li,ol,ul,table,th,td,dl,dd,dt,div,li,h1,h2,h3,h4,h5,main,section,article,aside,footer,nav", targetElement).length > 0)
-            return;
-        if (targetElement == null) {
-            return;
-        }
-        const boundingRectOfInnerTextNodes = SpeakTheWeb.getBoundingRectangleOfInnerTextNodes(targetElement);
-        /*
-            log("Contents:", $(targetElement).contents())
-            log("All text nodes:", getInnerTextNodes(targetElement));
-            log("Bounding rects:", targetElement.getBoundingClientRect(), getBoundingRectangleOfInnerTextNodes(targetElement));
-            log("Cursor x:", cursorX, ", Cursor y:", cursorY);
-        */
-        // Check the cursor is positioned above actual content and not just an empty spacing area
-        if (event.clientX < boundingRectOfInnerTextNodes.left ||
-            event.clientX > boundingRectOfInnerTextNodes.right ||
-            event.clientY < boundingRectOfInnerTextNodes.top ||
-            event.clientY > boundingRectOfInnerTextNodes.bottom) {
-            return;
-        }
-        if (targetElement === currentlySpokenElement) {
-            speechSynthesis.cancel();
-            return;
-        }
-        currentlySpokenElement = targetElement;
-        yield speakElement(targetElement);
-        if (currentlySpokenElement === targetElement)
-            currentlySpokenElement = undefined;
-    }));
+    $(window).on("mousedown", function (event) { return __awaiter(_this, void 0, void 0, function () {
+        var hoveredElement, boundingElement, targetElement, boundingRectOfInnerTextNodes;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    if (GM_getValue("scriptEnabled") === "false") {
+                        return [2 /*return*/];
+                    }
+                    if (event.button !== 1)
+                        return [2 /*return*/];
+                    hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
+                    if ($(hoveredElement).closest("a").length > 0) {
+                        if (!event.ctrlKey)
+                            return [2 /*return*/];
+                        event.preventDefault();
+                    }
+                    boundingElement = $(hoveredElement)
+                        .closest("pre,code,li,td,th,dd,dt,p,div,h1,h2,h3,h4,h5,a,section,article,aside,footer,header,button,caption")
+                        .get(0);
+                    targetElement = SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent(boundingElement);
+                    // Make sure the element is not a container of some sort
+                    if ($("li,ol,ul,table,th,td,dl,dd,dt,div,li,h1,h2,h3,h4,h5,main,section,article,aside,footer,nav", targetElement).length > 0)
+                        return [2 /*return*/];
+                    if (targetElement == null) {
+                        return [2 /*return*/];
+                    }
+                    boundingRectOfInnerTextNodes = SpeakTheWeb.getBoundingRectangleOfInnerTextNodes(targetElement);
+                    /*
+                        log("Contents:", $(targetElement).contents())
+                        log("All text nodes:", getInnerTextNodes(targetElement));
+                        log("Bounding rects:", targetElement.getBoundingClientRect(), getBoundingRectangleOfInnerTextNodes(targetElement));
+                        log("Cursor x:", cursorX, ", Cursor y:", cursorY);
+                    */
+                    // Check the cursor is positioned above actual content and not just an empty spacing area
+                    if (event.clientX < boundingRectOfInnerTextNodes.left ||
+                        event.clientX > boundingRectOfInnerTextNodes.right ||
+                        event.clientY < boundingRectOfInnerTextNodes.top ||
+                        event.clientY > boundingRectOfInnerTextNodes.bottom) {
+                        return [2 /*return*/];
+                    }
+                    if (targetElement === currentlySpokenElement) {
+                        speechSynthesis.cancel();
+                        return [2 /*return*/];
+                    }
+                    currentlySpokenElement = targetElement;
+                    return [4 /*yield*/, speakElement(targetElement)];
+                case 1:
+                    _a.sent();
+                    if (currentlySpokenElement === targetElement)
+                        currentlySpokenElement = undefined;
+                    return [2 /*return*/];
+            }
+        });
+    }); });
 })(SpeakTheWeb || (SpeakTheWeb = {}));

@@ -2,9 +2,9 @@
 	"compileOnSave": true,
 	"compilerOptions": {
 		"outFile": "build/speak-the-web.user.js",
-		"target": "es6",
+		"target": "es5",
 		"module": "none",
-		"lib": ["es6", "dom"],
+		"lib": ["es5", "es2015.promise", "dom"],
 		"watch": false,
 		"sourceMap": false,
 		"removeComments": false,
