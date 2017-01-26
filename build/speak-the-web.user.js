@@ -5,7 +5,7 @@
 // @author      Rotem Dan <rotemdan@gmail.com>
 // @include     http://*
 // @include     https://*
-// @version     0.1.2
+// @version     0.1.3
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
@@ -171,21 +171,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var SpeakTheWeb;
 (function (SpeakTheWeb) {
     var _this = this;
-    $(window).on("keypress", function (e) {
-        if (e.ctrlKey === true && e.which === "`".charCodeAt(0)) {
-            if (GM_getValue("scriptEnabled") !== "false") {
-                GM_setValue("scriptEnabled", "false");
-                if (speechSynthesis.speaking)
-                    speechSynthesis.cancel();
-            }
-            else {
-                GM_setValue("scriptEnabled", "true");
-            }
-        }
-        else if (e.keyCode === 27) {
-            speechSynthesis.cancel();
-        }
-    });
     $("head").append("\n\t<style>\n\t\t\t#speakTheWebHighlightingRectangle {\n\t\t\t\tposition: absolute; \n\t\t\t\tdisplay: inline; \n\t\t\t\tz-index:99999;\n\t\t\t\tbackground-color: #ffcd00;\n\t\t\t\topacity: 0;\n\t\t\t}\n\t</style>");
     var highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
     $("body").append(highlightingRectangle);
@@ -203,7 +188,6 @@ var SpeakTheWeb;
             text = text.replace(/[\r\n]/g, " ");
             SpeakTheWeb.log("Target element:", element);
             SpeakTheWeb.log("Text:", text);
-            speechSynthesis.cancel();
             utterance = new SpeechSynthesisUtterance(text);
             if (/Chrome/.test(navigator.userAgent)) {
                 for (_i = 0, _a = speechSynthesis.getVoices(); _i < _a.length; _i++) {
@@ -261,8 +245,22 @@ var SpeakTheWeb;
                 })];
         });
     }); };
+    var delay = function (time) { return __awaiter(_this, void 0, void 0, function () {
+        var startTime;
+        return __generator(this, function (_a) {
+            startTime = Date.now();
+            return [2 /*return*/, new Promise(function (resolve, reject) {
+                    var interval = setInterval(function () {
+                        if (Date.now() - startTime > time) {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                    }, 10);
+                })];
+        });
+    }); };
     var currentlySpokenElement;
-    $(window).on("click", function (event) {
+    window.addEventListener("click", function (event) {
         if (GM_getValue("scriptEnabled") === "false") {
             return;
         }
@@ -270,23 +268,20 @@ var SpeakTheWeb;
             var hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
             if ($(hoveredElement).closest("a").length > 0) {
                 event.preventDefault();
-                return false;
+                event.stopPropagation();
             }
         }
-        return true;
-    });
-    $(window).on("mousedown", function (event) { return __awaiter(_this, void 0, void 0, function () {
+    }, true);
+    window.addEventListener("mousedown", function (event) { return __awaiter(_this, void 0, void 0, function () {
         var hoveredElement, boundingElement, targetElement, boundingRectOfInnerTextNodes;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    SpeakTheWeb.log("mousedown");
-                    if (GM_getValue("scriptEnabled") === "false") {
-                        return [2 /*return*/];
-                    }
-                    SpeakTheWeb.log("hello");
                     if (event.button !== 1)
                         return [2 /*return*/];
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
                     hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
                     if ($(hoveredElement).closest("a").length > 0) {
                         if (!event.ctrlKey)
@@ -317,18 +312,33 @@ var SpeakTheWeb;
                         event.clientY > boundingRectOfInnerTextNodes.bottom) {
                         return [2 /*return*/];
                     }
-                    if (targetElement === currentlySpokenElement) {
-                        speechSynthesis.cancel();
-                        return [2 /*return*/];
-                    }
+                    if (!(speechSynthesis.speaking === true)) return [3 /*break*/, 3];
+                    if (!(targetElement === currentlySpokenElement)) return [3 /*break*/, 1];
+                    speechSynthesis.cancel();
+                    return [2 /*return*/];
+                case 1:
+                    speechSynthesis.cancel();
+                    return [4 /*yield*/, delay(200)];
+                case 2:
+                    _a.sent();
+                    _a.label = 3;
+                case 3:
                     currentlySpokenElement = targetElement;
                     return [4 /*yield*/, speakElement(targetElement)];
-                case 1:
+                case 4:
                     _a.sent();
                     if (currentlySpokenElement === targetElement)
                         currentlySpokenElement = undefined;
                     return [2 /*return*/];
             }
         });
-    }); });
+    }); }, true);
+    window.addEventListener("keydown", function (e) {
+        if (e.keyCode === 27) {
+            speechSynthesis.cancel();
+        }
+    }, true);
+    window.addEventListener("beforeunload", function (e) {
+        speechSynthesis.cancel();
+    }, true);
 })(SpeakTheWeb || (SpeakTheWeb = {}));

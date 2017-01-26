@@ -2,23 +2,6 @@ declare function GM_getValue(key: string): string;
 declare function GM_setValue(key: string, value: string): void;
 
 namespace SpeakTheWeb {
-
-	$(window).on("keypress", (e) => {
-		if (e.ctrlKey === true && e.which === "`".charCodeAt(0)) {
-			if (GM_getValue("scriptEnabled") !== "false") {
-				GM_setValue("scriptEnabled", "false");
-
-				if (speechSynthesis.speaking)
-					speechSynthesis.cancel();
-			}
-			else {
-				GM_setValue("scriptEnabled", "true");
-			}
-		} else if (e.keyCode === 27) {
-			speechSynthesis.cancel();
-		}
-	});
-
 	$("head").append(`
 	<style>
 			#speakTheWebHighlightingRectangle {
@@ -50,8 +33,6 @@ namespace SpeakTheWeb {
 
 		log("Target element:", element);
 		log("Text:", text);
-
-		speechSynthesis.cancel();
 
 		const utterance = new SpeechSynthesisUtterance(text);
 
@@ -119,9 +100,22 @@ namespace SpeakTheWeb {
 		});
 	}
 
+	const delay = async (time: number) => {
+		const startTime = Date.now();
+
+		return new Promise((resolve, reject) => {
+			const interval = setInterval(() => {
+				if (Date.now() - startTime > time) {
+					clearInterval(interval);
+					resolve();
+				}
+			}, 10);
+		});
+	}
+
 	let currentlySpokenElement: HTMLElement | undefined;
 
-	$(window).on("click", (event) => {
+	window.addEventListener("click", (event) => {
 		if (GM_getValue("scriptEnabled") === "false") {
 			return;
 		}
@@ -130,32 +124,27 @@ namespace SpeakTheWeb {
 			const hoveredElement = <HTMLElement>document.elementFromPoint(event.clientX, event.clientY);
 			if ($(hoveredElement).closest("a").length > 0) {
 				event.preventDefault();
-				return false;
+				event.stopPropagation();
 			}
 		}
+	}, true);
 
-		return true;
-	});
-
-	$(window).on("mousedown", async (event) => {
-		log("mousedown");
-		if (GM_getValue("scriptEnabled") === "false") {
-			return;
-		}
-
-		log("hello");
-
+	window.addEventListener("mousedown", async (event) => {
 		if (event.button !== 1)
 			return;
+
+		event.preventDefault();
+		event.stopPropagation();
+		event.stopImmediatePropagation();
 
 		const hoveredElement = <HTMLElement>document.elementFromPoint(event.clientX, event.clientY);
 		if ($(hoveredElement).closest("a").length > 0) {
 			if (!event.ctrlKey)
 				return;
-			
+
 			event.preventDefault();
 		}
-			
+
 		const boundingElement = $(hoveredElement)
 			.closest("pre,code,li,td,th,dd,dt,p,div,h1,h2,h3,h4,h5,a,section,article,aside,footer,header,button,caption")
 			.get(0);
@@ -187,14 +176,31 @@ namespace SpeakTheWeb {
 			return;
 		}
 
-		if (targetElement === currentlySpokenElement) {
-			speechSynthesis.cancel();
-			return;
+		if (speechSynthesis.speaking === true) {
+			if (targetElement === currentlySpokenElement) {
+				speechSynthesis.cancel();
+				return;
+			} else {
+				speechSynthesis.cancel();
+				await delay(200);
+			}
 		}
-		
+
 		currentlySpokenElement = targetElement;
-		await speakElement(targetElement);
+		await speakElement(targetElement)
+
 		if (currentlySpokenElement === targetElement)
 			currentlySpokenElement = undefined;
-	});
+	}, true);
+
+
+	window.addEventListener("keydown", (e) => {
+		if (e.keyCode === 27) {
+			speechSynthesis.cancel();
+		}
+	}, true);
+
+	window.addEventListener("beforeunload", (e) => {
+		speechSynthesis.cancel();
+	}, true);	
 }
