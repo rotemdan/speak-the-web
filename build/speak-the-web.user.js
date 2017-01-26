@@ -280,9 +280,11 @@ var SpeakTheWeb;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
+                    SpeakTheWeb.log("mousedown");
                     if (GM_getValue("scriptEnabled") === "false") {
                         return [2 /*return*/];
                     }
+                    SpeakTheWeb.log("hello");
                     if (event.button !== 1)
                         return [2 /*return*/];
                     hoveredElement = document.elementFromPoint(event.clientX, event.clientY);

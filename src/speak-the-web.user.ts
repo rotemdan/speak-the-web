@@ -138,9 +138,12 @@ namespace SpeakTheWeb {
 	});
 
 	$(window).on("mousedown", async (event) => {
+		log("mousedown");
 		if (GM_getValue("scriptEnabled") === "false") {
 			return;
 		}
+
+		log("hello");
 
 		if (event.button !== 1)
 			return;
