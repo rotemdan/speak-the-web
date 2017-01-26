@@ -11,7 +11,7 @@ The extension isn't ready for end-users yet, but you can test the latest develop
 
 ## How to use
 
-Whenever the cursor hovers an area of text that can be spoken, a small `▶` icon should appear to the left of that area. To stop the speech press the escape key.
+Clicking the the middle mouse button on any area of the page containing text would cause it to be spoken. A special exception is a link, which can be spoken using the `ctrl` + middle mouse button combination.
 
 ## Future
 

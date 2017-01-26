@@ -43,35 +43,53 @@ var SpeakTheWeb;
         }
         return result;
     };
+    class Rect {
+        constructor(clientRect) {
+            this.top = 0;
+            this.left = 0;
+            this.bottom = 0;
+            this.right = 0;
+            if (clientRect) {
+                this.top = clientRect.top;
+                this.left = clientRect.left;
+                this.bottom = clientRect.bottom;
+                this.right = clientRect.right;
+            }
+        }
+        get width() {
+            return this.right - this.left;
+        }
+        get height() {
+            return this.bottom - this.top;
+        }
+    }
+    ;
     SpeakTheWeb.getBoundingRectangleOfTextNodeRange = (node, startOffset, endOffset) => {
         if (node.nodeType !== Node.TEXT_NODE)
             throw new TypeError("Node must be a text node");
         const range = document.createRange();
         range.setStart(node, startOffset || 0);
         range.setEnd(node, endOffset || node.textContent.length);
-        return range.getBoundingClientRect();
+        return new Rect(range.getBoundingClientRect());
     };
     SpeakTheWeb.getBoundingRectangleOfInnerTextNodes = (element) => {
         const allTextNodes = SpeakTheWeb.getInnerTextNodes(element);
-        const clientRects = [];
-        const clientRectUnion = {
-            top: Infinity,
-            left: Infinity,
-            bottom: 0,
-            right: 0
-        };
-        allTextNodes.forEach((node) => {
-            const nodeRect = SpeakTheWeb.getBoundingRectangleOfTextNodeRange(node);
-            if (nodeRect.width === 0 || nodeRect.height === 0)
-                return;
-            clientRects.push(nodeRect);
-            clientRectUnion.top = Math.min(clientRectUnion.top, nodeRect.top);
-            clientRectUnion.left = Math.min(clientRectUnion.left, nodeRect.left);
-            clientRectUnion.bottom = Math.max(clientRectUnion.bottom, nodeRect.bottom);
-            clientRectUnion.right = Math.max(clientRectUnion.right, nodeRect.right);
-        });
+        const rects = [];
+        const rectUnion = new Rect();
+        rectUnion.top = Infinity,
+            rectUnion.left = Infinity,
+            allTextNodes.forEach((node) => {
+                const nodeRect = SpeakTheWeb.getBoundingRectangleOfTextNodeRange(node);
+                if (nodeRect.width === 0 || nodeRect.height === 0)
+                    return;
+                rects.push(nodeRect);
+                rectUnion.top = Math.min(rectUnion.top, nodeRect.top);
+                rectUnion.left = Math.min(rectUnion.left, nodeRect.left);
+                rectUnion.bottom = Math.max(rectUnion.bottom, nodeRect.bottom);
+                rectUnion.right = Math.max(rectUnion.right, nodeRect.right);
+            });
         //log("Client rects:", clientRects);
-        return clientRectUnion;
+        return rectUnion;
     };
 })(SpeakTheWeb || (SpeakTheWeb = {}));
 var SpeakTheWeb;
@@ -115,37 +133,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 var SpeakTheWeb;
 (function (SpeakTheWeb) {
-    //let timeSpeechHasLastEnded = 0;
-    let timeWindowWasLastScrolled = 0;
-    let timeCursorHasLastMoved = Infinity;
-    let timeKeyWasLassedPressed = 0;
-    let cursorX = 0;
-    let cursorY = 0;
-    $(window).on("scroll", () => {
-        timeWindowWasLastScrolled = Date.now();
-        timeCursorHasLastMoved = Infinity;
-    });
-    $(window).on("mousemove", (e) => {
-        timeCursorHasLastMoved = Date.now();
-        cursorX = e.clientX;
-        cursorY = e.clientY;
-    });
-    $(window).on("mouseleave blur", function (e) {
-        if (e.target !== this)
-            return;
-        //speechSynthesis.cancel();
-    });
-    $(window).on("focus", function (e) {
-        if (e.target !== this)
-            return;
-        timeCursorHasLastMoved = Infinity;
-    });
     $(document).on("keypress", (e) => {
         if (e.ctrlKey === true && e.which === "`".charCodeAt(0)) {
             if (GM_getValue("scriptEnabled") !== "false") {
                 GM_setValue("scriptEnabled", "false");
-                currentTargetElement = undefined;
-                timeCursorHasLastMoved = Infinity;
                 if (speechSynthesis.speaking)
                     speechSynthesis.cancel();
             }
@@ -156,28 +147,9 @@ var SpeakTheWeb;
         else if (e.keyCode === 27) {
             speechSynthesis.cancel();
         }
-        else {
-            timeKeyWasLassedPressed = Date.now();
-            timeCursorHasLastMoved = Infinity;
-        }
     });
     $("head").append(`
 	<style>
-			.currentlySpokenElement { box-shadow: 0 0 0 2px #424242 !important; }
-			#speakTheWebPlayIcon { 
-				position: absolute; 
-				display: inline; 
-				visiblity: hidden;
-				opacity: 0; 
-				transition: opacity 0.3s; 
-				cursor: pointer; 
-				z-index:99999; 
-				//background-color: white; 
-				color: black;
-				font-family: Arial,Helvetica Neue,Helvetica,sans-serif;
-				font-size: 14px;
-			}
-
 			#speakTheWebHighlightingRectangle {
 				position: absolute; 
 				display: inline; 
@@ -186,10 +158,6 @@ var SpeakTheWeb;
 				opacity: 0;
 			}
 	</style>`);
-    const playIcon = $("<span id='speakTheWebPlayIcon'>&#x25B6;</span>");
-    $("body").append(playIcon);
-    const playIconWidth = playIcon.width();
-    const playIconHeight = playIcon.height();
     const highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
     $("body").append(highlightingRectangle);
     const speakElement = (element) => __awaiter(this, void 0, void 0, function* () {
@@ -234,13 +202,11 @@ var SpeakTheWeb;
                     const wordStartOffset = event.charIndex;
                     const wordEndOffset = SpeakTheWeb.guessWordEndOffset(text, wordStartOffset);
                     const word = text.substring(wordStartOffset, wordEndOffset);
-                    SpeakTheWeb.log(word);
+                    //log(word);
                     let nodeTextStartOffset = 0;
                     for (let node of textNodes) {
                         const nodeText = node.textContent;
-                        //const nodeTextEndOffset = nodeTextStartOffset + nodeText.length;
                         if (nodeTextStartOffset + nodeText.length > wordStartOffset) {
-                            //log(node);
                             const nodeWordStartOffset = wordStartOffset - nodeTextStartOffset;
                             const nodeWordEndOffset = Math.min(nodeWordStartOffset + word.length, nodeText.length);
                             const wordRect = SpeakTheWeb.getBoundingRectangleOfTextNodeRange(node, nodeWordStartOffset, nodeWordEndOffset);
@@ -260,59 +226,42 @@ var SpeakTheWeb;
             speechSynthesis.speak(utterance);
         });
     });
-    let currentTargetElement;
-    playIcon.on("mousedown", () => {
-        if (currentTargetElement)
-            speakElement(currentTargetElement);
-    });
-    playIcon.on("mouseenter", () => {
-        playIcon.css("opacity", "1.0");
-    });
-    playIcon.on("mouseleave", () => {
-        playIcon.css("opacity", "0.3");
-    });
-    setInterval(() => __awaiter(this, void 0, void 0, function* () {
+    let currentlySpokenElement;
+    $(window).on("click", (event) => {
         if (GM_getValue("scriptEnabled") === "false") {
             return;
         }
-        /*
-        if (document.hidden) {
-            if (speechSynthesis.speaking) {
-                speechSynthesis.cancel();
+        if (event.button === 1 && event.ctrlKey) {
+            const hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
+            if ($(hoveredElement).closest("a").length > 0) {
+                event.preventDefault();
+                return false;
             }
-
+        }
+        return true;
+    });
+    $(window).on("mousedown", (event) => __awaiter(this, void 0, void 0, function* () {
+        if (GM_getValue("scriptEnabled") === "false") {
             return;
         }
-        */
-        const hoveredElement = document.elementFromPoint(cursorX, cursorY);
+        if (event.button !== 1)
+            return;
+        const hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
+        if ($(hoveredElement).closest("a").length > 0) {
+            if (!event.ctrlKey)
+                return;
+            event.preventDefault();
+        }
         const boundingElement = $(hoveredElement)
-            .closest("pre,code,li,td,dd,dt,p,div,h1,h2,h3,h4,h5,a,section,article,aside,footer,header,button,caption")
+            .closest("pre,code,li,td,th,dd,dt,p,div,h1,h2,h3,h4,h5,a,section,article,aside,footer,header,button,caption")
             .get(0);
         const targetElement = SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent(boundingElement);
-        /*
-        if (targetElement == currentTargetElement) {
-            if (currentTargetElementState === "speaking" ||
-                currentTargetElementState === "finished") {
-                return;
-            }
-        } else {
-            if (currentTargetElementState === "speaking") {
-                speechSynthesis.cancel();
-            }
-
-            currentTargetElement = targetElement;
-            currentTargetElementState = "none";
-        }
-        */
-        if (targetElement == null)
-            return;
-        /*
-        if (!isElementCompletelyVisible(targetElement))
-            return;
-        */
-        // Make sure this is not a container of some sort
+        // Make sure the element is not a container of some sort
         if ($("li,ol,ul,table,th,td,dl,dd,dt,div,li,h1,h2,h3,h4,h5,main,section,article,aside,footer,nav", targetElement).length > 0)
             return;
+        if (targetElement == null) {
+            return;
+        }
         const boundingRectOfInnerTextNodes = SpeakTheWeb.getBoundingRectangleOfInnerTextNodes(targetElement);
         /*
             log("Contents:", $(targetElement).contents())
@@ -321,51 +270,19 @@ var SpeakTheWeb;
             log("Cursor x:", cursorX, ", Cursor y:", cursorY);
         */
         // Check the cursor is positioned above actual content and not just an empty spacing area
-        if (cursorX < boundingRectOfInnerTextNodes.left ||
-            cursorX > boundingRectOfInnerTextNodes.right ||
-            cursorY < boundingRectOfInnerTextNodes.top ||
-            cursorY > boundingRectOfInnerTextNodes.bottom) {
+        if (event.clientX < boundingRectOfInnerTextNodes.left ||
+            event.clientX > boundingRectOfInnerTextNodes.right ||
+            event.clientY < boundingRectOfInnerTextNodes.top ||
+            event.clientY > boundingRectOfInnerTextNodes.bottom) {
             return;
         }
-        //log($(targetElement).offset())
-        /*
-        if (timeSpeechHasLastEnded > Date.now() - 1000) {
-            if (timeWindowWasLastScrolled > Date.now() - 1000 ||
-                timeCursorHasLastMoved > Date.now() - 500) {
-                return;
-            }
-        } else {
-            if (timeWindowWasLastScrolled > Date.now() - 1500 ||
-                timeCursorHasLastMoved > Date.now() - 1000) {
-                return;
-            }
+        if (targetElement === currentlySpokenElement) {
+            speechSynthesis.cancel();
+            return;
         }
-        */
-        //if (targetElement !== boundingElement)
-        //	log("Using deeper desendant with same text content:", hoveredElement, boundingElement, targetElement);
-        const onTargetElementMouseLeave = () => {
-            $(targetElement).off("mouseleave", onTargetElementMouseLeave);
-            setTimeout(() => {
-                if (currentTargetElement === targetElement)
-                    playIcon.css("opacity", "0");
-            }, 2000);
-        };
-        $(targetElement).on("mouseleave", onTargetElementMouseLeave);
-        //if (playIcon.css("display") === "none") {
-        playIcon.css("opacity", "0.3");
-        //const targetElementOffset = $(targetElement).offset();
-        //log(boundingRectOfInnerTextNodes);
-        playIcon.offset({
-            //top: $(window).scrollTop() + boundingRectOfInnerTextNodes.top - playIconHeight / 2, 
-            //left: $(window).scrollLeft() + boundingRectOfInnerTextNodes.right + playIconWidth / 2 
-            top: $(window).scrollTop() +
-                (boundingRectOfInnerTextNodes.top +
-                    boundingRectOfInnerTextNodes.bottom) / 2 -
-                playIconHeight / 2,
-            left: $(window).scrollLeft() + boundingRectOfInnerTextNodes.left - playIconWidth - 4
-        });
-        //log($(playIcon).offset());
-        //}
-        currentTargetElement = targetElement;
-    }), 100);
+        currentlySpokenElement = targetElement;
+        yield speakElement(targetElement);
+        if (currentlySpokenElement === targetElement)
+            currentlySpokenElement = undefined;
+    }));
 })(SpeakTheWeb || (SpeakTheWeb = {}));

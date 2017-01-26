@@ -38,28 +38,48 @@ namespace SpeakTheWeb {
 		return result;
 	}
 
-	type Rect = { top: number, left: number, bottom: number, right: number };
+	class Rect {
+		constructor(clientRect?: ClientRect) {
+			if (clientRect) {
+				this.top = clientRect.top;
+				this.left = clientRect.left;
+				this.bottom = clientRect.bottom;
+				this.right = clientRect.right;
+			}
+		}
 
-	export const getBoundingRectangleOfTextNodeRange = (node: Node, startOffset?: number, endOffset?: number): ClientRect => {
+		top: number = 0;
+		left: number = 0;
+		bottom: number = 0;
+		right: number = 0;
+
+		get width() {
+			return this.right - this.left;
+		}
+
+		get height() {
+			return this.bottom - this.top;
+		}
+	};
+
+
+	export const getBoundingRectangleOfTextNodeRange = (node: Node, startOffset?: number, endOffset?: number): Rect => {
 		if (node.nodeType !== Node.TEXT_NODE)
 			throw new TypeError("Node must be a text node");
 
 		const range = document.createRange();
 		range.setStart(node, startOffset || 0);
 		range.setEnd(node, endOffset || node.textContent!.length);
-		return range.getBoundingClientRect();
+		return new Rect(range.getBoundingClientRect());
 	}
 
 	export const getBoundingRectangleOfInnerTextNodes = (element: Element) => {
 		const allTextNodes = getInnerTextNodes(element);
 
-		const clientRects: Rect[] = [];
-		const clientRectUnion: Rect = {
-			top: Infinity,
-			left: Infinity,
-			bottom: 0,
-			right: 0
-		};
+		const rects: Rect[] = [];
+		const rectUnion = new Rect();
+		rectUnion.top = Infinity,
+		rectUnion.left = Infinity,
 
 		allTextNodes.forEach((node) => {
 			const nodeRect = getBoundingRectangleOfTextNodeRange(node);
@@ -67,16 +87,16 @@ namespace SpeakTheWeb {
 			if (nodeRect.width === 0 || nodeRect.height === 0)
 				return;
 
-			clientRects.push(nodeRect);
+			rects.push(nodeRect);
 
-			clientRectUnion.top = Math.min(clientRectUnion.top, nodeRect.top);
-			clientRectUnion.left = Math.min(clientRectUnion.left, nodeRect.left);
-			clientRectUnion.bottom = Math.max(clientRectUnion.bottom, nodeRect.bottom);
-			clientRectUnion.right = Math.max(clientRectUnion.right, nodeRect.right);
+			rectUnion.top = Math.min(rectUnion.top, nodeRect.top);
+			rectUnion.left = Math.min(rectUnion.left, nodeRect.left);
+			rectUnion.bottom = Math.max(rectUnion.bottom, nodeRect.bottom);
+			rectUnion.right = Math.max(rectUnion.right, nodeRect.right);
 		});
 
 		//log("Client rects:", clientRects);
 
-		return clientRectUnion;
+		return rectUnion;
 	}
 }
