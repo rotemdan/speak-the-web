@@ -207,8 +207,10 @@ var SpeakTheWeb;
                 return [2 /*return*/];
             utterance = new SpeechSynthesisUtterance(text);
             if (SpeakTheWeb.runningInChrome) {
+                //log(speechSynthesis.getVoices().map((voice) => voice.name));
                 for (_i = 0, _a = speechSynthesis.getVoices(); _i < _a.length; _i++) {
                     voice = _a[_i];
+                    //if (voice.name.indexOf("Google UK English Female") === 0) {
                     if (voice.localService === true) {
                         utterance.voice = voice;
                     }
@@ -256,6 +258,8 @@ var SpeakTheWeb;
                                 }
                                 nodeTextStartOffset += nodeText.length;
                             }
+                        }
+                        else {
                         }
                     };
                     speechSynthesis.speak(utterance);
@@ -313,7 +317,7 @@ var SpeakTheWeb;
                 case 1:
                     speechSynthesis.cancel();
                     if (!SpeakTheWeb.runningInChrome) return [3 /*break*/, 3];
-                    return [4 /*yield*/, SpeakTheWeb.delay(250)];
+                    return [4 /*yield*/, SpeakTheWeb.delay(300)];
                 case 2:
                     _a.sent();
                     _a.label = 3;

@@ -29,11 +29,15 @@ namespace SpeakTheWeb {
 		const utterance = new SpeechSynthesisUtterance(text);
 
 		if (runningInChrome) {
+			//log(speechSynthesis.getVoices().map((voice) => voice.name));
+			
 			for (const voice of speechSynthesis.getVoices()) {
+				//if (voice.name.indexOf("Google UK English Female") === 0) {
 				if (voice.localService === true) {
 					utterance.voice = voice;
 				}
 			}
+			
 		} else {
 			for (const voice of speechSynthesis.getVoices()) {
 				if (voice.name.indexOf("Microsoft Zira Desktop") === 0) {
@@ -85,6 +89,8 @@ namespace SpeakTheWeb {
 
 						nodeTextStartOffset += nodeText.length;
 					}
+				} else {
+					//log(event);
 				}
 			}
 
@@ -155,8 +161,9 @@ namespace SpeakTheWeb {
 				return;
 			} else {
 				speechSynthesis.cancel();
+
 				if (runningInChrome)
-					await delay(250);
+					await delay(300);
 			}
 		}
 
