@@ -1,5 +1,6 @@
 namespace SpeakTheWeb {
 	export const log = console.log;
+	export const runningInChrome = /Chrome/.test(navigator.userAgent);
 
 	export const isElementCompletelyVisible = (element: HTMLElement) => {
 		const elementClientRect = element.getBoundingClientRect();
@@ -21,51 +22,29 @@ namespace SpeakTheWeb {
 		}
 	}
 
-	export const getInnerTextNodes = (element: Element): Node[] => {
+	export const getInnerTextNodes = (element: Node, recursionFilter?: (node: Node) => boolean): Node[] => {
 		let result: Node[] = [];
 		const allChildNodes = $(element).contents();
 
 		for (let i = 0; i < allChildNodes.length; i++) {
-			const node = allChildNodes.get(i);
+			const node = <Node>allChildNodes.get(i);
 
 			if (node.nodeType === Node.TEXT_NODE) {
 				result.push(node);
 			} else {
-				result = result.concat(getInnerTextNodes(node));
+				if (recursionFilter && !recursionFilter(node))
+					continue;
+
+				result = result.concat(getInnerTextNodes(node, recursionFilter));
 			}
 		}
 
 		return result;
 	}
 
-	class Rect {
-		constructor(clientRect?: ClientRect) {
-			if (clientRect) {
-				this.top = clientRect.top;
-				this.left = clientRect.left;
-				this.bottom = clientRect.bottom;
-				this.right = clientRect.right;
-			}
-		}
-
-		top: number = 0;
-		left: number = 0;
-		bottom: number = 0;
-		right: number = 0;
-
-		get width() {
-			return this.right - this.left;
-		}
-
-		get height() {
-			return this.bottom - this.top;
-		}
-	};
-
-
 	export const getBoundingRectangleOfTextNodeRange = (node: Node, startOffset?: number, endOffset?: number): Rect => {
 		if (node.nodeType !== Node.TEXT_NODE)
-			throw new TypeError("Node must be a text node");
+			throw new TypeError("Node must be a text node.");
 
 		const range = document.createRange();
 		range.setStart(node, startOffset || 0);
@@ -73,30 +52,28 @@ namespace SpeakTheWeb {
 		return new Rect(range.getBoundingClientRect());
 	}
 
-	export const getBoundingRectangleOfInnerTextNodes = (element: Element) => {
-		const allTextNodes = getInnerTextNodes(element);
-
-		const rects: Rect[] = [];
+	export const getBoundingRectangleOfTextNodes = (textNodes: Node[]) => {
 		const rectUnion = new Rect();
 		rectUnion.top = Infinity,
-		rectUnion.left = Infinity,
+			rectUnion.left = Infinity,
 
-		allTextNodes.forEach((node) => {
-			const nodeRect = getBoundingRectangleOfTextNodeRange(node);
+			textNodes.forEach((node) => {
+				const nodeRect = getBoundingRectangleOfTextNodeRange(node);
 
-			if (nodeRect.width === 0 || nodeRect.height === 0)
-				return;
+				if (nodeRect.width === 0 || nodeRect.height === 0)
+					return;
 
-			rects.push(nodeRect);
-
-			rectUnion.top = Math.min(rectUnion.top, nodeRect.top);
-			rectUnion.left = Math.min(rectUnion.left, nodeRect.left);
-			rectUnion.bottom = Math.max(rectUnion.bottom, nodeRect.bottom);
-			rectUnion.right = Math.max(rectUnion.right, nodeRect.right);
-		});
-
-		//log("Client rects:", clientRects);
+				rectUnion.top = Math.min(rectUnion.top, nodeRect.top);
+				rectUnion.left = Math.min(rectUnion.left, nodeRect.left);
+				rectUnion.bottom = Math.max(rectUnion.bottom, nodeRect.bottom);
+				rectUnion.right = Math.max(rectUnion.right, nodeRect.right);
+			});
 
 		return rectUnion;
+	}
+
+	export const concatTextNodes = (textNodes: Node[]) => {
+		return textNodes.reduce<string>(
+					(content, node) => content.concat(node.textContent || ""), "")
 	}
 }

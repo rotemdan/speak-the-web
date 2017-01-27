@@ -32,6 +32,8 @@
 		"src/jquery.d.ts",
 		"src/SpeechSynthesis.d.ts",
 		"src/UserscriptMetadata.ts",
+		"src/Rect.ts",
+		"src/Utils.ts",
 		"src/DomUtils.ts",
 		"src/NlpUtils.ts",
 		"src/speak-the-web.user.ts"

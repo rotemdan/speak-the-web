@@ -1,49 +1,17 @@
 // ==UserScript==
 // @name        Speak the Web
 // @namespace   https://github.com/rotemdan
-// @description Speak any text on the page by middle clicking it.
+// @description Speak any text on the page by middle-clicking it.
 // @author      Rotem Dan <rotemdan@gmail.com>
 // @include     http://*
 // @include     https://*
-// @version     0.1.3
+// @version     0.1.4
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // ==/UserScript== 
 var SpeakTheWeb;
 (function (SpeakTheWeb) {
-    SpeakTheWeb.log = console.log;
-    SpeakTheWeb.isElementCompletelyVisible = function (element) {
-        var elementClientRect = element.getBoundingClientRect();
-        return (elementClientRect.top >= 0 &&
-            elementClientRect.left >= 0 &&
-            elementClientRect.bottom <= window.innerHeight &&
-            elementClientRect.right <= window.innerWidth);
-    };
-    SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent = function (element) {
-        var targetTextContent = $(element).text();
-        var matchingChildren = $(element).children().filter(function (index, child) { return $(child).text() === targetTextContent; });
-        if (matchingChildren.length > 0) {
-            return SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent(matchingChildren.get(0));
-        }
-        else {
-            return element;
-        }
-    };
-    SpeakTheWeb.getInnerTextNodes = function (element) {
-        var result = [];
-        var allChildNodes = $(element).contents();
-        for (var i = 0; i < allChildNodes.length; i++) {
-            var node = allChildNodes.get(i);
-            if (node.nodeType === Node.TEXT_NODE) {
-                result.push(node);
-            }
-            else {
-                result = result.concat(SpeakTheWeb.getInnerTextNodes(node));
-            }
-        }
-        return result;
-    };
     var Rect = (function () {
         function Rect(clientRect) {
             this.top = 0;
@@ -73,65 +41,7 @@ var SpeakTheWeb;
         });
         return Rect;
     }());
-    ;
-    SpeakTheWeb.getBoundingRectangleOfTextNodeRange = function (node, startOffset, endOffset) {
-        if (node.nodeType !== Node.TEXT_NODE)
-            throw new TypeError("Node must be a text node");
-        var range = document.createRange();
-        range.setStart(node, startOffset || 0);
-        range.setEnd(node, endOffset || node.textContent.length);
-        return new Rect(range.getBoundingClientRect());
-    };
-    SpeakTheWeb.getBoundingRectangleOfInnerTextNodes = function (element) {
-        var allTextNodes = SpeakTheWeb.getInnerTextNodes(element);
-        var rects = [];
-        var rectUnion = new Rect();
-        rectUnion.top = Infinity,
-            rectUnion.left = Infinity,
-            allTextNodes.forEach(function (node) {
-                var nodeRect = SpeakTheWeb.getBoundingRectangleOfTextNodeRange(node);
-                if (nodeRect.width === 0 || nodeRect.height === 0)
-                    return;
-                rects.push(nodeRect);
-                rectUnion.top = Math.min(rectUnion.top, nodeRect.top);
-                rectUnion.left = Math.min(rectUnion.left, nodeRect.left);
-                rectUnion.bottom = Math.max(rectUnion.bottom, nodeRect.bottom);
-                rectUnion.right = Math.max(rectUnion.right, nodeRect.right);
-            });
-        //log("Client rects:", clientRects);
-        return rectUnion;
-    };
-})(SpeakTheWeb || (SpeakTheWeb = {}));
-var SpeakTheWeb;
-(function (SpeakTheWeb) {
-    SpeakTheWeb.guessWordEndOffset = function (sourceText, wordStartOffset) {
-        var wordAndRemainingText = sourceText.substring(wordStartOffset);
-        // Handle some common abberviations
-        var first4Letters = wordAndRemainingText.substring(0, 4).toLowerCase();
-        if (first4Letters === "e.g." || first4Letters === "i.e.")
-            return wordStartOffset + 4;
-        // Some symbols are pronounced as individual words:
-        if (/^[\.\+\%\=\*\:\/©™&@]/.test(wordAndRemainingText))
-            return wordStartOffset + 1;
-        // Try to match up to the next punctuation character that is very likely to be a word
-        // Boundary. The MS engines treat parts of abberviations like M.A. as separate words
-        // so this would work with them as well.
-        var wordEndMatch = /--|[\s—"“”@&`\^\.\,\;\:\(\)\[\]\{\}\<\>\=\?\!\$\*\%\/\\]|$/.exec(wordAndRemainingText);
-        if (wordEndMatch == null) {
-            return wordStartOffset;
-        }
-        var wordEndIndex = wordEndMatch.index;
-        var matchedWord = wordAndRemainingText.substring(0, wordEndIndex);
-        // If the last letter was an apostrophe (') character, and the character before the word start
-        // wasn't an apostrophe and the previous to last character wasn't an "s", 
-        // consider that apostrophe not to be a part of the word.
-        if (/[\'\’]$]/.test(matchedWord) &&
-            !/^[\'\’]$]/.test(sourceText[wordStartOffset - 1]) &&
-            matchedWord[matchedWord.length - 2] !== "s") {
-            wordEndIndex -= 1;
-        }
-        return wordStartOffset + wordEndIndex;
-    };
+    SpeakTheWeb.Rect = Rect;
 })(SpeakTheWeb || (SpeakTheWeb = {}));
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -171,25 +81,132 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var SpeakTheWeb;
 (function (SpeakTheWeb) {
     var _this = this;
+    SpeakTheWeb.delay = function (time) { return __awaiter(_this, void 0, void 0, function () {
+        var startTime;
+        return __generator(this, function (_a) {
+            startTime = Date.now();
+            return [2 /*return*/, new Promise(function (resolve, reject) {
+                    var interval = setInterval(function () {
+                        if (Date.now() - startTime > time) {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                    }, 10);
+                })];
+        });
+    }); };
+})(SpeakTheWeb || (SpeakTheWeb = {}));
+var SpeakTheWeb;
+(function (SpeakTheWeb) {
+    SpeakTheWeb.log = console.log;
+    SpeakTheWeb.runningInChrome = /Chrome/.test(navigator.userAgent);
+    SpeakTheWeb.isElementCompletelyVisible = function (element) {
+        var elementClientRect = element.getBoundingClientRect();
+        return (elementClientRect.top >= 0 &&
+            elementClientRect.left >= 0 &&
+            elementClientRect.bottom <= window.innerHeight &&
+            elementClientRect.right <= window.innerWidth);
+    };
+    SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent = function (element) {
+        var targetTextContent = $(element).text();
+        var matchingChildren = $(element).children().filter(function (index, child) { return $(child).text() === targetTextContent; });
+        if (matchingChildren.length > 0) {
+            return SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent(matchingChildren.get(0));
+        }
+        else {
+            return element;
+        }
+    };
+    SpeakTheWeb.getInnerTextNodes = function (element, recursionFilter) {
+        var result = [];
+        var allChildNodes = $(element).contents();
+        for (var i = 0; i < allChildNodes.length; i++) {
+            var node = allChildNodes.get(i);
+            if (node.nodeType === Node.TEXT_NODE) {
+                result.push(node);
+            }
+            else {
+                if (recursionFilter && !recursionFilter(node))
+                    continue;
+                result = result.concat(SpeakTheWeb.getInnerTextNodes(node, recursionFilter));
+            }
+        }
+        return result;
+    };
+    SpeakTheWeb.getBoundingRectangleOfTextNodeRange = function (node, startOffset, endOffset) {
+        if (node.nodeType !== Node.TEXT_NODE)
+            throw new TypeError("Node must be a text node.");
+        var range = document.createRange();
+        range.setStart(node, startOffset || 0);
+        range.setEnd(node, endOffset || node.textContent.length);
+        return new SpeakTheWeb.Rect(range.getBoundingClientRect());
+    };
+    SpeakTheWeb.getBoundingRectangleOfTextNodes = function (textNodes) {
+        var rectUnion = new SpeakTheWeb.Rect();
+        rectUnion.top = Infinity,
+            rectUnion.left = Infinity,
+            textNodes.forEach(function (node) {
+                var nodeRect = SpeakTheWeb.getBoundingRectangleOfTextNodeRange(node);
+                if (nodeRect.width === 0 || nodeRect.height === 0)
+                    return;
+                rectUnion.top = Math.min(rectUnion.top, nodeRect.top);
+                rectUnion.left = Math.min(rectUnion.left, nodeRect.left);
+                rectUnion.bottom = Math.max(rectUnion.bottom, nodeRect.bottom);
+                rectUnion.right = Math.max(rectUnion.right, nodeRect.right);
+            });
+        return rectUnion;
+    };
+    SpeakTheWeb.concatTextNodes = function (textNodes) {
+        return textNodes.reduce(function (content, node) { return content.concat(node.textContent || ""); }, "");
+    };
+})(SpeakTheWeb || (SpeakTheWeb = {}));
+var SpeakTheWeb;
+(function (SpeakTheWeb) {
+    SpeakTheWeb.guessWordEndOffset = function (sourceText, wordStartOffset) {
+        var wordAndRemainingText = sourceText.substring(wordStartOffset);
+        // Handle some common abberviations
+        var first4Letters = wordAndRemainingText.substring(0, 4).toLowerCase();
+        if (first4Letters === "e.g." || first4Letters === "i.e.")
+            return wordStartOffset + 4;
+        // Some symbols are pronounced as individual words:
+        if (/^[\.\+\%\=\*\:\/©™&@]/.test(wordAndRemainingText))
+            return wordStartOffset + 1;
+        // Try to match up to the next punctuation character that is very likely to be a word
+        // Boundary. The MS engines treat parts of abberviations like M.A. as separate words
+        // so this would work with them as well.
+        var wordEndMatch = /--|[\s—"“”@&`\^\.\,\;\:\(\)\[\]\{\}\<\>\=\?\!\$\*\%\/\\]|$/.exec(wordAndRemainingText);
+        if (wordEndMatch == null) {
+            return wordStartOffset;
+        }
+        var wordEndIndex = wordEndMatch.index;
+        var matchedWord = wordAndRemainingText.substring(0, wordEndIndex);
+        // If the last letter was an apostrophe (') character, and the character before the word start
+        // wasn't an apostrophe and the previous to last character wasn't an "s", 
+        // consider that apostrophe not to be a part of the word.
+        if (/[\'\’]$]/.test(matchedWord) &&
+            !/^[\'\’]$]/.test(sourceText[wordStartOffset - 1]) &&
+            matchedWord[matchedWord.length - 2] !== "s") {
+            wordEndIndex -= 1;
+        }
+        return wordStartOffset + wordEndIndex;
+    };
+})(SpeakTheWeb || (SpeakTheWeb = {}));
+var SpeakTheWeb;
+(function (SpeakTheWeb) {
+    var _this = this;
     $("head").append("\n\t<style>\n\t\t\t#speakTheWebHighlightingRectangle {\n\t\t\t\tposition: absolute; \n\t\t\t\tdisplay: inline; \n\t\t\t\tz-index:99999;\n\t\t\t\tbackground-color: #ffcd00;\n\t\t\t\topacity: 0;\n\t\t\t}\n\t</style>");
     var highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
     $("body").append(highlightingRectangle);
-    var speakElement = function (element) { return __awaiter(_this, void 0, void 0, function () {
-        var textNodes, text, utterance, _i, _a, voice, _b, _c, voice;
+    var speakTextNodes = function (textNodes) { return __awaiter(_this, void 0, void 0, function () {
+        var text, utterance, _i, _a, voice, _b, _c, voice;
         return __generator(this, function (_d) {
-            if (!element)
+            if (!textNodes)
                 return [2 /*return*/];
-            textNodes = SpeakTheWeb.getInnerTextNodes(element);
-            text = "";
-            textNodes.forEach(function (node) {
-                text += node.textContent;
-            });
-            SpeakTheWeb.log(textNodes);
-            text = text.replace(/[\r\n]/g, " ");
-            SpeakTheWeb.log("Target element:", element);
-            SpeakTheWeb.log("Text:", text);
+            text = SpeakTheWeb.concatTextNodes(textNodes).replace(/[\r\n]/g, " ");
+            if (text === "")
+                return [2 /*return*/];
             utterance = new SpeechSynthesisUtterance(text);
-            if (/Chrome/.test(navigator.userAgent)) {
+            if (SpeakTheWeb.runningInChrome) {
                 for (_i = 0, _a = speechSynthesis.getVoices(); _i < _a.length; _i++) {
                     voice = _a[_i];
                     if (voice.localService === true) {
@@ -245,71 +262,48 @@ var SpeakTheWeb;
                 })];
         });
     }); };
-    var delay = function (time) { return __awaiter(_this, void 0, void 0, function () {
-        var startTime;
-        return __generator(this, function (_a) {
-            startTime = Date.now();
-            return [2 /*return*/, new Promise(function (resolve, reject) {
-                    var interval = setInterval(function () {
-                        if (Date.now() - startTime > time) {
-                            clearInterval(interval);
-                            resolve();
-                        }
-                    }, 10);
-                })];
-        });
-    }); };
     var currentlySpokenElement;
-    window.addEventListener("click", function (event) {
-        if (GM_getValue("scriptEnabled") === "false") {
-            return;
-        }
-        if (event.button === 1 && event.ctrlKey) {
-            var hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
-            if ($(hoveredElement).closest("a").length > 0) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-        }
-    }, true);
     window.addEventListener("mousedown", function (event) { return __awaiter(_this, void 0, void 0, function () {
-        var hoveredElement, boundingElement, targetElement, boundingRectOfInnerTextNodes;
+        var mouseX, mouseY, hoveredElement, targetElement, textNodeRecursionFilter, matchingTextNodes, boundingRectOfMatchingTextNodes;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
+                    // Check the middle mouse button was clicked
                     if (event.button !== 1)
                         return [2 /*return*/];
+                    // Prevent all existing browser behaviors that are triggered by the middle mouse button
                     event.preventDefault();
                     event.stopPropagation();
-                    event.stopImmediatePropagation();
-                    hoveredElement = document.elementFromPoint(event.clientX, event.clientY);
-                    if ($(hoveredElement).closest("a").length > 0) {
-                        if (!event.ctrlKey)
-                            return [2 /*return*/];
-                        event.preventDefault();
-                    }
-                    boundingElement = $(hoveredElement)
+                    mouseX = event.clientX;
+                    mouseY = event.clientY;
+                    hoveredElement = document.elementFromPoint(mouseX, mouseY);
+                    // If the hovered element, or an ancestor of it, is an anchor element and control key isn't pressed
+                    // return
+                    if (!event.ctrlKey && $(hoveredElement).closest("a").length > 0)
+                        return [2 /*return*/];
+                    targetElement = $(hoveredElement)
                         .closest("pre,code,li,td,th,dd,dt,p,div,h1,h2,h3,h4,h5,a,section,article,aside,footer,header,button,caption")
                         .get(0);
-                    targetElement = SpeakTheWeb.findDeepestDescendantWithIdenticalTextContent(boundingElement);
-                    // Make sure the element is not a container of some sort
-                    if ($("li,ol,ul,table,th,td,dl,dd,dt,div,li,h1,h2,h3,h4,h5,main,section,article,aside,footer,nav", targetElement).length > 0)
+                    // If no matching element was found, return
+                    if (targetElement == null)
                         return [2 /*return*/];
-                    if (targetElement == null) {
-                        return [2 /*return*/];
-                    }
-                    boundingRectOfInnerTextNodes = SpeakTheWeb.getBoundingRectangleOfInnerTextNodes(targetElement);
+                    textNodeRecursionFilter = function (node) {
+                        return !$(node).is("p,li,ol,ul,table,th,td,dl,dd,dt,div,li,h1,h2,h3,h4,h5,main,section,article,aside,footer,nav");
+                    };
+                    matchingTextNodes = SpeakTheWeb.getInnerTextNodes(targetElement, textNodeRecursionFilter);
+                    boundingRectOfMatchingTextNodes = SpeakTheWeb.getBoundingRectangleOfTextNodes(matchingTextNodes);
                     /*
-                        log("Contents:", $(targetElement).contents())
-                        log("All text nodes:", getInnerTextNodes(targetElement));
-                        log("Bounding rects:", targetElement.getBoundingClientRect(), getBoundingRectangleOfInnerTextNodes(targetElement));
-                        log("Cursor x:", cursorX, ", Cursor y:", cursorY);
+                            log("Target element:", targetElement);
+                            log("Matching text nodes:", matchingTextNodes);
+                            log("Cursor X:", mouseX, ", Cursor Y:", mouseY);
+                            log("Bounding rect of text nodes:", boundingRectOfMatchingTextNodes);
+                            log("");
                     */
-                    // Check the cursor is positioned above actual content and not just an empty spacing area
-                    if (event.clientX < boundingRectOfInnerTextNodes.left ||
-                        event.clientX > boundingRectOfInnerTextNodes.right ||
-                        event.clientY < boundingRectOfInnerTextNodes.top ||
-                        event.clientY > boundingRectOfInnerTextNodes.bottom) {
+                    // Check the cursor is positioned above actual text that would be read
+                    if (mouseX < boundingRectOfMatchingTextNodes.left ||
+                        mouseX > boundingRectOfMatchingTextNodes.right ||
+                        mouseY < boundingRectOfMatchingTextNodes.top ||
+                        mouseY > boundingRectOfMatchingTextNodes.bottom) {
                         return [2 /*return*/];
                     }
                     if (!(speechSynthesis.speaking === true)) return [3 /*break*/, 3];
@@ -318,14 +312,18 @@ var SpeakTheWeb;
                     return [2 /*return*/];
                 case 1:
                     speechSynthesis.cancel();
-                    return [4 /*yield*/, delay(200)];
+                    if (!SpeakTheWeb.runningInChrome) return [3 /*break*/, 3];
+                    return [4 /*yield*/, SpeakTheWeb.delay(250)];
                 case 2:
                     _a.sent();
                     _a.label = 3;
                 case 3:
+                    // Set the target element as the currently spoken element
                     currentlySpokenElement = targetElement;
-                    return [4 /*yield*/, speakElement(targetElement)];
+                    // Speak the text nodes selected from that element
+                    return [4 /*yield*/, speakTextNodes(matchingTextNodes)];
                 case 4:
+                    // Speak the text nodes selected from that element
                     _a.sent();
                     if (currentlySpokenElement === targetElement)
                         currentlySpokenElement = undefined;
@@ -340,5 +338,11 @@ var SpeakTheWeb;
     }, true);
     window.addEventListener("beforeunload", function (e) {
         speechSynthesis.cancel();
+    }, true);
+    window.addEventListener("click", function (event) {
+        if (event.button === 1 && event.ctrlKey) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
     }, true);
 })(SpeakTheWeb || (SpeakTheWeb = {}));

@@ -16,34 +16,26 @@ namespace SpeakTheWeb {
 	const highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
 	$("body").append(highlightingRectangle);
 
-	const speakElement = async (element: HTMLElement) => {
-		if (!element)
+	const speakTextNodes = async (textNodes: Node[]) => {
+		if (!textNodes)
 			return;
 
-		const textNodes = getInnerTextNodes(element);
-		let text = "";
+		// Concatentate the text content of all given nodes to yield the spoken text
+		const text = concatTextNodes(textNodes).replace(/[\r\n]/g, " ");
 
-		textNodes.forEach((node) => {
-			text += node.textContent;
-		});
-
-		log(textNodes);
-
-		text = text.replace(/[\r\n]/g, " ");
-
-		log("Target element:", element);
-		log("Text:", text);
+		if (text === "")
+			return;
 
 		const utterance = new SpeechSynthesisUtterance(text);
 
-		if (/Chrome/.test(navigator.userAgent)) {
-			for (let voice of speechSynthesis.getVoices()) {
+		if (runningInChrome) {
+			for (const voice of speechSynthesis.getVoices()) {
 				if (voice.localService === true) {
 					utterance.voice = voice;
 				}
 			}
 		} else {
-			for (let voice of speechSynthesis.getVoices()) {
+			for (const voice of speechSynthesis.getVoices()) {
 				if (voice.name.indexOf("Microsoft Zira Desktop") === 0) {
 					utterance.voice = voice;
 				}
@@ -100,94 +92,79 @@ namespace SpeakTheWeb {
 		});
 	}
 
-	const delay = async (time: number) => {
-		const startTime = Date.now();
-
-		return new Promise((resolve, reject) => {
-			const interval = setInterval(() => {
-				if (Date.now() - startTime > time) {
-					clearInterval(interval);
-					resolve();
-				}
-			}, 10);
-		});
-	}
-
 	let currentlySpokenElement: HTMLElement | undefined;
 
-	window.addEventListener("click", (event) => {
-		if (GM_getValue("scriptEnabled") === "false") {
-			return;
-		}
-
-		if (event.button === 1 && event.ctrlKey) {
-			const hoveredElement = <HTMLElement>document.elementFromPoint(event.clientX, event.clientY);
-			if ($(hoveredElement).closest("a").length > 0) {
-				event.preventDefault();
-				event.stopPropagation();
-			}
-		}
-	}, true);
-
 	window.addEventListener("mousedown", async (event) => {
+		// Check the middle mouse button was clicked
 		if (event.button !== 1)
 			return;
 
+		// Prevent all existing browser behaviors that are triggered by the middle mouse button
 		event.preventDefault();
 		event.stopPropagation();
-		event.stopImmediatePropagation();
 
-		const hoveredElement = <HTMLElement>document.elementFromPoint(event.clientX, event.clientY);
-		if ($(hoveredElement).closest("a").length > 0) {
-			if (!event.ctrlKey)
-				return;
+		// Get current mouse position relative to the viewport
+		const mouseX = event.clientX;
+		const mouseY = event.clientY;
 
-			event.preventDefault();
-		}
+		// Get the currently hovered element
+		const hoveredElement = <HTMLElement>document.elementFromPoint(mouseX, mouseY);
 
-		const boundingElement = $(hoveredElement)
+		// If the hovered element, or an ancestor of it, is an anchor element and control key isn't pressed
+		// return
+		if (!event.ctrlKey && $(hoveredElement).closest("a").length > 0)
+			return
+
+		// Find the closest ancestor element having a tag that is considered suitable for speaking
+		const targetElement = $(hoveredElement)
 			.closest("pre,code,li,td,th,dd,dt,p,div,h1,h2,h3,h4,h5,a,section,article,aside,footer,header,button,caption")
 			.get(0);
 
-		const targetElement = findDeepestDescendantWithIdenticalTextContent(boundingElement);
-
-		// Make sure the element is not a container of some sort
-		if ($("li,ol,ul,table,th,td,dl,dd,dt,div,li,h1,h2,h3,h4,h5,main,section,article,aside,footer,nav", targetElement).length > 0)
+		// If no matching element was found, return
+		if (targetElement == null)
 			return;
 
-		if (targetElement == null) {
+		// Find the bounding rectangle of all inner text nodes, recurse with a special filter that prevent
+		// iterating into containers
+		const textNodeRecursionFilter = (node: Node) => {
+			return !$(node).is("p,li,ol,ul,table,th,td,dl,dd,dt,div,li,h1,h2,h3,h4,h5,main,section,article,aside,footer,nav");
+		}
+
+		const matchingTextNodes = getInnerTextNodes(targetElement, textNodeRecursionFilter);
+		const boundingRectOfMatchingTextNodes = getBoundingRectangleOfTextNodes(matchingTextNodes);
+/*
+		log("Target element:", targetElement);
+		log("Matching text nodes:", matchingTextNodes);
+		log("Cursor X:", mouseX, ", Cursor Y:", mouseY);
+		log("Bounding rect of text nodes:", boundingRectOfMatchingTextNodes);
+		log("");
+*/
+		// Check the cursor is positioned above actual text that would be read
+		if (mouseX < boundingRectOfMatchingTextNodes.left ||
+			mouseX > boundingRectOfMatchingTextNodes.right ||
+			mouseY < boundingRectOfMatchingTextNodes.top ||
+			mouseY > boundingRectOfMatchingTextNodes.bottom) {
 			return;
 		}
 
-		const boundingRectOfInnerTextNodes = getBoundingRectangleOfInnerTextNodes(targetElement);
-
-		/*
-			log("Contents:", $(targetElement).contents())
-			log("All text nodes:", getInnerTextNodes(targetElement));
-			log("Bounding rects:", targetElement.getBoundingClientRect(), getBoundingRectangleOfInnerTextNodes(targetElement));
-			log("Cursor x:", cursorX, ", Cursor y:", cursorY);
-		*/
-
-		// Check the cursor is positioned above actual content and not just an empty spacing area
-		if (event.clientX < boundingRectOfInnerTextNodes.left ||
-			event.clientX > boundingRectOfInnerTextNodes.right ||
-			event.clientY < boundingRectOfInnerTextNodes.top ||
-			event.clientY > boundingRectOfInnerTextNodes.bottom) {
-			return;
-		}
-
+		// If the engine is currently speaking, stop it, add a delay to
+		// work around a bug in chrome where speech wouldn't start if cancel() was called very recently
 		if (speechSynthesis.speaking === true) {
 			if (targetElement === currentlySpokenElement) {
 				speechSynthesis.cancel();
 				return;
 			} else {
 				speechSynthesis.cancel();
-				await delay(200);
+				if (runningInChrome)
+					await delay(250);
 			}
 		}
 
+		// Set the target element as the currently spoken element
 		currentlySpokenElement = targetElement;
-		await speakElement(targetElement)
+
+		// Speak the text nodes selected from that element
+		await speakTextNodes(matchingTextNodes)
 
 		if (currentlySpokenElement === targetElement)
 			currentlySpokenElement = undefined;
@@ -202,5 +179,12 @@ namespace SpeakTheWeb {
 
 	window.addEventListener("beforeunload", (e) => {
 		speechSynthesis.cancel();
-	}, true);	
+	}, true);
+
+	window.addEventListener("click", (event) => {
+		if (event.button === 1 && event.ctrlKey) {
+			event.preventDefault();
+			event.stopPropagation();
+		}
+	}, true);
 }
