@@ -127,8 +127,10 @@ namespace SpeakTheWeb {
 			.get(0);
 
 		// If no matching element was found, return
-		if (targetElement == null)
+		if (targetElement == null) {
+			speechSynthesis.cancel();
 			return;
+		}
 
 		// Find the bounding rectangle of all inner text nodes, recurse with a special filter that prevent
 		// iterating into containers
@@ -150,14 +152,20 @@ namespace SpeakTheWeb {
 			mouseX > boundingRectOfMatchingTextNodes.right ||
 			mouseY < boundingRectOfMatchingTextNodes.top ||
 			mouseY > boundingRectOfMatchingTextNodes.bottom) {
+
+			speechSynthesis.cancel();
 			return;
 		}
 
 		// If the engine is currently speaking, stop it, add a delay to
 		// work around a bug in chrome where speech wouldn't start if cancel() was called very recently
-		if (speechSynthesis.speaking === true) {
+		//log(speechSynthesis);
+		if (speechSynthesis.paused === true && currentlySpokenElement === targetElement) {
+			speechSynthesis.resume();
+			return;
+		} else if (speechSynthesis.speaking === true) {
 			if (targetElement === currentlySpokenElement) {
-				speechSynthesis.cancel();
+				speechSynthesis.pause();
 				return;
 			} else {
 				speechSynthesis.cancel();

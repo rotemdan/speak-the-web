@@ -289,8 +289,10 @@ var SpeakTheWeb;
                         .closest("pre,code,li,td,th,dd,dt,p,div,h1,h2,h3,h4,h5,a,section,article,aside,footer,header,button,caption")
                         .get(0);
                     // If no matching element was found, return
-                    if (targetElement == null)
+                    if (targetElement == null) {
+                        speechSynthesis.cancel();
                         return [2 /*return*/];
+                    }
                     textNodeRecursionFilter = function (node) {
                         return !$(node).is("p,li,ol,ul,table,th,td,dl,dd,dt,div,li,h1,h2,h3,h4,h5,main,section,article,aside,footer,nav");
                     };
@@ -308,25 +310,30 @@ var SpeakTheWeb;
                         mouseX > boundingRectOfMatchingTextNodes.right ||
                         mouseY < boundingRectOfMatchingTextNodes.top ||
                         mouseY > boundingRectOfMatchingTextNodes.bottom) {
+                        speechSynthesis.cancel();
                         return [2 /*return*/];
                     }
-                    if (!(speechSynthesis.speaking === true)) return [3 /*break*/, 3];
-                    if (!(targetElement === currentlySpokenElement)) return [3 /*break*/, 1];
-                    speechSynthesis.cancel();
+                    if (!(speechSynthesis.paused === true && currentlySpokenElement === targetElement)) return [3 /*break*/, 1];
+                    speechSynthesis.resume();
                     return [2 /*return*/];
                 case 1:
-                    speechSynthesis.cancel();
-                    if (!SpeakTheWeb.runningInChrome) return [3 /*break*/, 3];
-                    return [4 /*yield*/, SpeakTheWeb.delay(300)];
+                    if (!(speechSynthesis.speaking === true)) return [3 /*break*/, 4];
+                    if (!(targetElement === currentlySpokenElement)) return [3 /*break*/, 2];
+                    speechSynthesis.pause();
+                    return [2 /*return*/];
                 case 2:
-                    _a.sent();
-                    _a.label = 3;
+                    speechSynthesis.cancel();
+                    if (!SpeakTheWeb.runningInChrome) return [3 /*break*/, 4];
+                    return [4 /*yield*/, SpeakTheWeb.delay(300)];
                 case 3:
+                    _a.sent();
+                    _a.label = 4;
+                case 4:
                     // Set the target element as the currently spoken element
                     currentlySpokenElement = targetElement;
                     // Speak the text nodes selected from that element
                     return [4 /*yield*/, speakTextNodes(matchingTextNodes)];
-                case 4:
+                case 5:
                     // Speak the text nodes selected from that element
                     _a.sent();
                     if (currentlySpokenElement === targetElement)
