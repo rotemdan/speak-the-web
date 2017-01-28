@@ -109,6 +109,8 @@ namespace SpeakTheWeb {
 		event.preventDefault();
 		event.stopPropagation();
 
+		//log(window.getSelection());
+
 		// Get current mouse position relative to the viewport
 		const mouseX = event.clientX;
 		const mouseY = event.clientY;

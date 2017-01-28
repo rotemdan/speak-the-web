@@ -5,7 +5,7 @@
 // @author      Rotem Dan <rotemdan@gmail.com>
 // @include     http://*
 // @include     https://*
-// @version     0.1.4
+// @version     0.1.5
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
