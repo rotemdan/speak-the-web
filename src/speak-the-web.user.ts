@@ -193,7 +193,8 @@ namespace SpeakTheWeb {
 	}, true);
 
 	window.addEventListener("beforeunload", (e) => {
-		speechSynthesis.cancel();
+		if (speechSynthesis.speaking && currentlySpokenElement)
+			speechSynthesis.cancel();
 	}, true);
 
 	window.addEventListener("click", (event) => {

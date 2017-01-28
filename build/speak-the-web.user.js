@@ -348,7 +348,8 @@ var SpeakTheWeb;
         }
     }, true);
     window.addEventListener("beforeunload", function (e) {
-        speechSynthesis.cancel();
+        if (speechSynthesis.speaking && currentlySpokenElement)
+            speechSynthesis.cancel();
     }, true);
     window.addEventListener("click", function (event) {
         if (event.button === 1 && event.ctrlKey) {
