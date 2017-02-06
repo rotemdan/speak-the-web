@@ -16,3 +16,7 @@ Clicking the middle mouse button on any area of the page containing text would c
 ## Future
 
 Once this gets usable enough it would be published as an independent extension for Chrome and Firefox, Opera and possibly Edge (by then it would have probably been moved over to use the [WebExtensions API](https://developer.mozilla.org/en-US/Add-ons/WebExtensions)).
+
+## License
+
+[GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.txt)

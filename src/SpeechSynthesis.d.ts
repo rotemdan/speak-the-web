@@ -1,3 +1,4 @@
+/*
 declare interface SpeechSynthesisVoice {
 	readonly default: boolean;
 	readonly lang: string;
@@ -5,14 +6,14 @@ declare interface SpeechSynthesisVoice {
 	readonly name: string;
 	readonly voiceURI: string;
 }
-
+*/
 declare interface UtteranceEvent extends Event {
 	name: "word" | "sentence";
 	utterance: SpeechSynthesisUtterance;
 	charIndex: number;
 	elapsedTime: number;
 }
-
+/*
 declare class SpeechSynthesisUtterance {
 	constructor(text: string);
 
@@ -45,3 +46,4 @@ declare class SpeechSynthesis {
 }
 
 declare var speechSynthesis: SpeechSynthesis;
+*/

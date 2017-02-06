@@ -194,7 +194,7 @@ var SpeakTheWeb;
 var SpeakTheWeb;
 (function (SpeakTheWeb) {
     var _this = this;
-    $("head").append("\n\t<style>\n\t\t\t#speakTheWebHighlightingRectangle {\n\t\t\t\tposition: absolute; \n\t\t\t\tdisplay: inline; \n\t\t\t\tz-index:99999;\n\t\t\t\tbackground-color: #ffcd00;\n\t\t\t\topacity: 0;\n\t\t\t}\n\t</style>");
+    $("head").append("\n\t<style>\n\t\t\t#speakTheWebHighlightingRectangle {\n\t\t\t\tposition: absolute;\n\t\t\t\tdisplay: inline;\n\t\t\t\tz-index:99999;\n\t\t\t\tbackground-color: #ffcd00;\n\t\t\t\topacity: 0;\n\t\t\t}\n\t</style>");
     var highlightingRectangle = $("<span id='speakTheWebHighlightingRectangle' />");
     $("body").append(highlightingRectangle);
     var speakTextNodes = function (textNodes) { return __awaiter(_this, void 0, void 0, function () {

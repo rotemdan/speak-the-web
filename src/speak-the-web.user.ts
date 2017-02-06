@@ -5,8 +5,8 @@ namespace SpeakTheWeb {
 	$("head").append(`
 	<style>
 			#speakTheWebHighlightingRectangle {
-				position: absolute; 
-				display: inline; 
+				position: absolute;
+				display: inline;
 				z-index:99999;
 				background-color: #ffcd00;
 				opacity: 0;
@@ -30,14 +30,14 @@ namespace SpeakTheWeb {
 
 		if (runningInChrome) {
 			//log(speechSynthesis.getVoices().map((voice) => voice.name));
-			
+
 			for (const voice of speechSynthesis.getVoices()) {
 				//if (voice.name.indexOf("Google UK English Female") === 0) {
 				if (voice.localService === true) {
 					utterance.voice = voice;
 				}
 			}
-			
+
 		} else {
 			for (const voice of speechSynthesis.getVoices()) {
 				if (voice.name.indexOf("Microsoft Zira Desktop") === 0) {
@@ -52,12 +52,12 @@ namespace SpeakTheWeb {
 				resolve();
 			}
 
-			utterance.onerror = (event) => {
+			utterance.onerror = (event: Event & { error: any }) => {
 				log("Utterance error:", event.error);
 				reject(event.error);
 			}
 
-			utterance.onboundary = (event) => {
+			utterance.onboundary = (event: UtteranceEvent) => {
 				if (event.name === "word") {
 					const wordStartOffset = event.charIndex;
 					const wordEndOffset = guessWordEndOffset(text, wordStartOffset);
