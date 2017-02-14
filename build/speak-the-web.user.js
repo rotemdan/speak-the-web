@@ -260,6 +260,7 @@ var SpeakTheWeb;
                             }
                         }
                         else {
+                            //log(event);
                         }
                     };
                     speechSynthesis.speak(utterance);
@@ -286,7 +287,7 @@ var SpeakTheWeb;
                     if (!event.ctrlKey && $(hoveredElement).closest("a").length > 0)
                         return [2 /*return*/];
                     targetElement = $(hoveredElement)
-                        .closest("pre,code,li,td,th,dd,dt,p,div,h1,h2,h3,h4,h5,a,section,article,aside,footer,header,button,caption")
+                        .closest("pre,code,li,td,th,dd,dt,p,div,h1,h2,h3,h4,h5,a,section,article,aside,footer,header,button,caption,blockquote")
                         .get(0);
                     // If no matching element was found, return
                     if (targetElement == null) {
