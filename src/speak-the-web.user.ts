@@ -27,6 +27,7 @@ namespace SpeakTheWeb {
 			return;
 
 		const utterance = new SpeechSynthesisUtterance(text);
+		utterance.volume = 0.75;
 
 		if (runningInChrome) {
 			//log(speechSynthesis.getVoices().map((voice) => voice.name));
