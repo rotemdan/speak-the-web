@@ -206,7 +206,7 @@ var SpeakTheWeb;
             if (text === "")
                 return [2 /*return*/];
             utterance = new SpeechSynthesisUtterance(text);
-            utterance.volume = 0.8;
+            utterance.volume = 0.9;
             if (SpeakTheWeb.runningInChrome) {
                 //log(speechSynthesis.getVoices().map((voice) => voice.name));
                 for (_i = 0, _a = speechSynthesis.getVoices(); _i < _a.length; _i++) {
